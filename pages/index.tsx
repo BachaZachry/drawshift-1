@@ -1,8 +1,7 @@
 import { useEffect } from "react";
-import AuthPopup from "components/Auth";
+import { AuthPopup } from "components/Auth";
 import Header from "components/Header";
 import Navbar from "components/Navbar";
-import { supabase } from "lib/initSupabase";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import Card from "components/landing/Card";
@@ -13,9 +12,9 @@ export default function Home() {
 
   useEffect(() => {}, []);
 
-  supabase.auth.getSessionFromUrl().then((res) => {
-    if (!!res.data) router.push("/dashboard");
-  });
+  // supabase.auth.getSessionFromUrl().then((res) => {
+  //   if (!!res.data) router.push("/dashboard");
+  // });
 
   return (
     <div className="h-screen lg:overflow-y-hidden">

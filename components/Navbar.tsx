@@ -1,17 +1,24 @@
 import { Disclosure } from "@headlessui/react";
 import { LoginIcon } from "@heroicons/react/solid";
-import { Auth } from "@supabase/ui";
+import { useAppDispatch, useAppSelector } from "lib/hooks";
+import { open } from "lib/uiLoginSlice";
+import { username } from "lib/userSlice";
 import { useRouter } from "next/router";
-import { supabase } from "../lib/initSupabase";
-import { ui } from "../lib/store";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
 export default function Navbar() {
-  const { user } = Auth.useUser();
+  const user = useAppSelector(username) == null ? false : true;
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const logout = () => {
+    console.log("log out");
+  };
+  const openLoginForm = () => {
+    dispatch(open());
+  };
 
   return (
     <Disclosure as="nav" className="relative bg-gray-800">
@@ -40,7 +47,7 @@ export default function Navbar() {
                 <div className="flex-shrink-0">
                   {!!user && (
                     <button
-                      onClick={() => supabase.auth.signOut()}
+                      onClick={logout}
                       type="button"
                       className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md shadow-sm font-monst focus:outline-none"
                     >
@@ -66,7 +73,7 @@ export default function Navbar() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => ui.setLoginForm(true)}
+                      onClick={openLoginForm}
                       className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-white transition duration-200 bg-indigo-500 border border-transparent rounded-md shadow-sm font-monst hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500"
                     >
                       <LoginIcon

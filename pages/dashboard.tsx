@@ -28,7 +28,6 @@ import {
 } from "@heroicons/react/solid";
 import { observer } from "mobx-react-lite";
 import Spinner from "components/Spinner";
-import { supabase } from "lib/initSupabase";
 import React, { Fragment, useEffect, useState } from "react";
 import { useQuery } from "react-query";
 import NewBoard from "../components/Newboard";
@@ -96,11 +95,11 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-const fetchUser = new Promise(function (resolve, reject) {
-  // Make an asynchronous call and either resolve or reject
-  if (!supabase.auth.session) supabase.auth.refreshSession();
-  resolve(supabase.auth.user());
-});
+// const fetchUser = new Promise(function (resolve, reject) {
+//   // Make an asynchronous call and either resolve or reject
+//   if (!supabase.auth.session) supabase.auth.refreshSession();
+//   resolve(supabase.auth.user());
+// });
 
 interface User {
   user_metadata: {
@@ -121,35 +120,35 @@ const Dasboard = observer(() => {
 
   const router = useRouter();
 
-  const Logout = () => {
-    supabase.auth.signOut();
-    router.push("/");
-  };
+  // const Logout = () => {
+  //   supabase.auth.signOut();
+  //   router.push("/");
+  // };
 
   const [boards, setBoards] = useState();
 
-  const fetchBoards = async () => {
-    const { data: boards, error } = await supabase.from("boards").select("*");
-    setBoards(boards);
-    console.log("boards", boards);
-    console.log("error", error);
-  };
+  // const fetchBoards = async () => {
+  //   const { data: boards, error } = await supabase.from("boards").select("*");
+  //   setBoards(boards);
+  //   console.log("boards", boards);
+  //   console.log("error", error);
+  // };
 
-  const loadBoard = (id) => {
-    console.log(boards[id]);
-    canvas.setBoard(decomp(boards[id].board));
-    canvas.setTitle(boards[id].title);
-    canvas.setDescription(boards[id].description);
-    console.log("title", boards[id].title);
-    router.push("/board");
-  };
-  useEffect(() => {
-    fetchBoards();
-    supabase.auth.refreshSession();
-    const data = supabase.auth.user();
-    canvas.setUserId(data.id);
-    console.log(data);
-  }, []);
+  // const loadBoard = (id) => {
+  //   console.log(boards[id]);
+  //   canvas.setBoard(decomp(boards[id].board));
+  //   canvas.setTitle(boards[id].title);
+  //   canvas.setDescription(boards[id].description);
+  //   console.log("title", boards[id].title);
+  //   router.push("/board");
+  // };
+  // useEffect(() => {
+  //   fetchBoards();
+  //   supabase.auth.refreshSession();
+  //   const data = supabase.auth.user();
+  //   canvas.setUserId(data.id);
+  //   console.log(data);
+  // }, []);
   // @ts-ignore
   const { isLoading, error, data } = useQuery("userData", () =>
     fetchUser.then((res) => setUser(res))

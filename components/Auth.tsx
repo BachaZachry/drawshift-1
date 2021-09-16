@@ -1,23 +1,30 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { LoginIcon, XIcon } from "@heroicons/react/solid";
-import { Auth } from "@supabase/ui";
-import { ui } from "lib/store";
 import { Fragment, useRef, useState } from "react";
-import { supabase } from "../lib/initSupabase";
-import { observer } from "mobx-react-lite";
+import GoogleLogin from "react-google-login";
+import { useRouter } from "next/router";
+import { useAppDispatch, useAppSelector } from "lib/hooks";
+import { googleUserLogin } from "lib/userSlice";
+import { uiLoginState, open, close } from "lib/uiLoginSlice";
 
-const AuthPopup = observer(() => {
-  const { user } = Auth.useUser();
-
+export const AuthPopup = () => {
   const cancelButtonRef = useRef();
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+  const loginForm = useAppSelector(uiLoginState);
 
-  function closeModal() {
-    ui.setLoginForm(false);
+  const closeModal = () => {
+    dispatch(close());
+  };
+
+  async function responseGoogle(response) {
+    await dispatch(googleUserLogin(response.accessToken));
+    router.push("/dashboard");
   }
 
   return (
     <Transition
-      show={ui.loginForm}
+      show={loginForm}
       //@ts-ignore
       as={Fragment}
       enter="transition-opacity duration-300 ease-out"
@@ -28,7 +35,7 @@ const AuthPopup = observer(() => {
       leaveTo="opacity-0"
     >
       <Dialog
-        open={ui.loginForm}
+        open={loginForm}
         initialFocus={cancelButtonRef}
         static
         onClose={closeModal}
@@ -44,14 +51,15 @@ const AuthPopup = observer(() => {
           </div>
 
           <div className="px-16 py-8">
-            <Auth.UserContextProvider supabaseClient={supabase}>
-              <Auth supabaseClient={supabase} providers={["github"]} />
-            </Auth.UserContextProvider>
+            <GoogleLogin
+              clientId="865137569538-2k4mc40dur78flg8p1ncbu39h9n1tjtr.apps.googleusercontent.com"
+              buttonText="Log in with Google"
+              onSuccess={responseGoogle}
+              onFailure={(err) => console.log(err)}
+            />
           </div>
         </div>
       </Dialog>
     </Transition>
   );
-});
-
-export default AuthPopup;
+};
