@@ -6,16 +6,10 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import Card from "components/landing/Card";
 import { Toaster } from "react-hot-toast";
+import { useAppDispatch, useAppSelector } from "lib/hooks";
+import { loadUser, uStatus } from "lib/userSlice";
 
 export default function Home() {
-  const router = useRouter();
-
-  useEffect(() => {}, []);
-
-  // supabase.auth.getSessionFromUrl().then((res) => {
-  //   if (!!res.data) router.push("/dashboard");
-  // });
-
   return (
     <div className="h-screen lg:overflow-y-hidden">
       <Head>

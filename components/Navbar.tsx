@@ -1,9 +1,10 @@
 import { Disclosure } from "@headlessui/react";
 import { LoginIcon } from "@heroicons/react/solid";
 import { useAppDispatch, useAppSelector } from "lib/hooks";
-import { open } from "lib/uiLoginSlice";
-import { username } from "lib/userSlice";
+import { open, close } from "lib/uiLoginSlice";
+import { loadUser, username, uStatus } from "lib/userSlice";
 import { useRouter } from "next/router";
+import { useEffect } from "react";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
@@ -13,12 +14,32 @@ export default function Navbar() {
   const user = useAppSelector(username) == null ? false : true;
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const userStatus = useAppSelector(uStatus);
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
   const logout = () => {
     console.log("log out");
   };
   const openLoginForm = () => {
     dispatch(open());
   };
+
+  // If a token is available,check if it's valid
+  useEffect(() => {
+    if (userStatus == "idle" || userStatus == "failed") {
+      if (token != null) {
+        dispatch(loadUser());
+      }
+    }
+  }, [userStatus]);
+
+  // Close login form when you successfully login
+  useEffect(() => {
+    if (userStatus == "succeeded") {
+      dispatch(close());
+    }
+  }, [userStatus]);
 
   return (
     <Disclosure as="nav" className="relative bg-gray-800">
