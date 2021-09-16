@@ -26,7 +26,6 @@ import {
   ViewGridIcon,
   ViewListIcon,
 } from "@heroicons/react/solid";
-import { observer } from "mobx-react-lite";
 import Spinner from "components/Spinner";
 import React, { Fragment, useEffect, useState } from "react";
 import { useQuery } from "react-query";
@@ -51,6 +50,8 @@ import Head from "next/head";
 import { decomp } from "lib/calls";
 import DeleteForm from "components/Settings";
 import dayjs from "dayjs";
+import type { UserState } from "../lib/userSlice";
+import { useAppSelector } from "lib/hooks";
 
 const tabs = [{ name: "Boards", href: "#", current: true }];
 
@@ -95,36 +96,37 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-// const fetchUser = new Promise(function (resolve, reject) {
-//   // Make an asynchronous call and either resolve or reject
-//   if (!supabase.auth.session) supabase.auth.refreshSession();
-//   resolve(supabase.auth.user());
-// });
-
-interface User {
-  user_metadata: {
-    avatar_url: string;
-    full_name: string;
-  };
-}
-const Dasboard = observer(() => {
+const Dasboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selected, setSelected] = useState(views[1]);
   const [List, setList] = useState(true);
-  const [user, setUser] = useState({
-    user_metadata: {
-      avatar_url: "",
-      full_name: "",
-    },
-  });
-
+  const username = useAppSelector(username);
+  const dispatch = useAppDispatch();
+  const userStatus = useAppSelector(uStatus);
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const router = useRouter();
+
+  // If a token is available,check if it's valid
+  useEffect(() => {
+    if (userStatus == "idle") {
+      if (token != null) {
+        dispatch(loadUser());
+      }
+    }
+  }, [userStatus]);
+
+  // Redirect to the landing page if the token is invalid
+  useEffect(() => {
+    if (userStatus == "failed") {
+      router.push("/");
+    }
+  }, [userStatus]);
 
   // const Logout = () => {
   //   supabase.auth.signOut();
   //   router.push("/");
   // };
-
   const [boards, setBoards] = useState();
 
   // const fetchBoards = async () => {
@@ -164,7 +166,7 @@ const Dasboard = observer(() => {
         <title>Drawshift | Dashboard</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
       </Head>
-      <DeleteForm />
+      {/* <DeleteForm /> */}
       <NewBoard />
       {/* Top nav*/}
       <header className="relative flex items-center flex-shrink-0 h-16 bg-primary">
@@ -349,20 +351,15 @@ const Dasboard = observer(() => {
                 <HeaderProfile>
                   {/* Profile */}
                   <div className="flex items-center">
-                    <img
+                    {/* <img
                       className="hidden w-16 h-16 border-2 border-white border-solid rounded-full sm:block"
                       src={user.user_metadata.avatar_url}
                       alt=""
-                    />
+                    /> */}
                     <div>
                       <div className="flex items-center">
-                        <img
-                          className="w-16 h-16 border-2 border-white border-solid rounded-full sm:hidden"
-                          src={user.user_metadata.avatar_url}
-                          alt=""
-                        />
                         <h1 className="ml-3 text-3xl font-bold text-white sm:truncate">
-                          Good morning, {user.user_metadata.full_name}
+                          Good morning, {username}
                         </h1>
                       </div>
                       <dl className="flex flex-col mt-6 sm:ml-3 sm:mt-1 sm:flex-row sm:flex-wrap">
@@ -391,7 +388,7 @@ const Dasboard = observer(() => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => Logout()}
+                    onClick={() => console.log("log out")}
                     className="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition duration-200 rounded-md shadow-lg bg-secondary hover:bg-primary hover:text-gray-100 focus:outline-none"
                   >
                     Logout
@@ -418,7 +415,7 @@ const Dasboard = observer(() => {
                     aria-hidden="true"
                   />
                 </Search>
-                <button
+                {/* <button
                   type="button"
                   onClick={() => ui.setDeleteForm(true)}
                   className="items-center p-2 text-gray-400 transition duration-200 rounded-md shadow-sm w-11 h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
@@ -427,7 +424,8 @@ const Dasboard = observer(() => {
                     className="w-full h-full fill-current "
                     aria-hidden="true"
                   />
-                </button>
+                </button> */}
+                {/* To modify here  */}
                 <button
                   onClick={() => ui.setNewBoard(true)}
                   type="button"
@@ -602,6 +600,7 @@ const Dasboard = observer(() => {
                   Recently viewed
                 </h2>
 
+                {/* Modify here too  */}
                 {List && (
                   <ul
                     role="list"
@@ -711,5 +710,5 @@ const Dasboard = observer(() => {
       </div>
     </div>
   );
-});
+};
 export default Dasboard;

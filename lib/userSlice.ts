@@ -2,7 +2,7 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import type { RootState} from './store';
 import {api} from './api';
 
-interface UserState {
+export interface UserState {
     username : string,
     status : string,
     error : unknown
