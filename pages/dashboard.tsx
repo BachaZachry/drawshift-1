@@ -29,7 +29,6 @@ import {
 import Spinner from "components/Spinner";
 import React, { Fragment, useEffect, useState } from "react";
 import { useQuery } from "react-query";
-import NewBoard from "../components/Newboard";
 import {
   Header,
   HeaderButtons,
@@ -43,15 +42,15 @@ import {
   Utils,
 } from "../components/styled/dashboard.styled";
 import { compress, decompress } from "lzutf8";
-import CanvasDraw from "react-canvas-draw";
 import { useRouter } from "next/router";
-import { canvas, ui } from "lib/store";
 import Head from "next/head";
-import { decomp } from "lib/calls";
 import DeleteForm from "components/Settings";
 import dayjs from "dayjs";
-import type { UserState } from "../lib/userSlice";
-import { useAppSelector } from "lib/hooks";
+import { username, UserState, uStatus, loadUser } from "../lib/userSlice";
+import { useAppSelector, useAppDispatch } from "lib/hooks";
+import { open } from "lib/uiBoardSlice";
+import { RootState } from "lib/store";
+import { loadDrawings } from "lib/drawingSlice";
 
 const tabs = [{ name: "Boards", href: "#", current: true }];
 
@@ -100,19 +99,20 @@ const Dasboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selected, setSelected] = useState(views[1]);
   const [List, setList] = useState(true);
-  const username = useAppSelector(username);
+  const usrname = useAppSelector(username);
+  const error = useAppDispatch((state: RootState) => state.user.error);
   const dispatch = useAppDispatch();
   const userStatus = useAppSelector(uStatus);
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const router = useRouter();
+  const drawings = useAppSelector((state: RootState) => state.drawing.drawings);
 
+  const getDrawing = () => {};
   // If a token is available,check if it's valid
   useEffect(() => {
     if (userStatus == "idle") {
-      if (token != null) {
-        dispatch(loadUser());
-      }
+      dispatch(loadUser());
     }
   }, [userStatus]);
 
@@ -122,6 +122,10 @@ const Dasboard = () => {
       router.push("/");
     }
   }, [userStatus]);
+
+  useEffect(() => {
+    dispatch(loadDrawings());
+  }, []);
 
   // const Logout = () => {
   //   supabase.auth.signOut();
@@ -144,21 +148,9 @@ const Dasboard = () => {
   //   console.log("title", boards[id].title);
   //   router.push("/board");
   // };
-  // useEffect(() => {
-  //   fetchBoards();
-  //   supabase.auth.refreshSession();
-  //   const data = supabase.auth.user();
-  //   canvas.setUserId(data.id);
-  //   console.log(data);
-  // }, []);
   // @ts-ignore
-  const { isLoading, error, data } = useQuery("userData", () =>
-    fetchUser.then((res) => setUser(res))
-  );
 
-  if (isLoading || !boards) return <Spinner />;
-
-  if (error) return "An error has occurred: " + error.message;
+  if (userStatus == "pending") return <Spinner />;
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-primary font-monst">
@@ -167,7 +159,7 @@ const Dasboard = () => {
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
       </Head>
       {/* <DeleteForm /> */}
-      <NewBoard />
+      {/* <NewBoard /> */}
       {/* Top nav*/}
       <header className="relative flex items-center flex-shrink-0 h-16 bg-primary">
         {/* Logo area */}
@@ -275,19 +267,12 @@ const Dasboard = () => {
                 </div>
                 <div className="pt-4 pb-3 border-t border-gray-200">
                   <div className="flex items-center px-4 mx-auto max-w-8xl sm:px-6">
-                    <div className="flex-shrink-0">
-                      <img
-                        className="w-10 h-10 rounded-full"
-                        src={user.user_metadata.avatar_url}
-                        alt=""
-                      />
-                    </div>
                     <div className="flex-1 min-w-0 ml-3">
                       <div className="text-base font-medium text-gray-800 truncate">
-                        {data?.user_metadata.full_name}
+                        {usrname}
                       </div>
                       <div className="text-sm font-medium text-gray-500 truncate">
-                        {data?.user_metadata!.full_name}
+                        {usrname}
                       </div>
                     </div>
                     <a
@@ -359,7 +344,7 @@ const Dasboard = () => {
                     <div>
                       <div className="flex items-center">
                         <h1 className="ml-3 text-3xl font-bold text-white sm:truncate">
-                          Good morning, {username}
+                          Good morning, {usrname}
                         </h1>
                       </div>
                       <dl className="flex flex-col mt-6 sm:ml-3 sm:mt-1 sm:flex-row sm:flex-wrap">
@@ -425,9 +410,8 @@ const Dasboard = () => {
                     aria-hidden="true"
                   />
                 </button> */}
-                {/* To modify here  */}
                 <button
-                  onClick={() => ui.setNewBoard(true)}
+                  onClick={() => router.push("/drawing")}
                   type="button"
                   className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow w-11 h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >
@@ -435,6 +419,18 @@ const Dasboard = () => {
                     className="w-full h-full fill-current"
                     aria-hidden="true"
                   />
+                  <h3>New Drawing</h3>
+                </button>
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  type="button"
+                  className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow w-11 h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
+                >
+                  <ViewGridAddIcon
+                    className="w-full h-full fill-current"
+                    aria-hidden="true"
+                  />
+                  <h3>New Diagram</h3>
                 </button>
               </SearchbarContainer>
             </Searchbar>
@@ -601,7 +597,7 @@ const Dasboard = () => {
                 </h2>
 
                 {/* Modify here too  */}
-                {List && (
+                {/* {List && (
                   <ul
                     role="list"
                     className="grid grid-cols-1 divide-y divide-gray-800 rounded-lg shadow-lg bg-secondary border-1 gap-x-4 gap-y-0"
@@ -702,7 +698,10 @@ const Dasboard = () => {
                       </li>
                     ))}
                   </ul>
-                )}
+                )} */}
+                {drawings.map((drawing) => (
+                  <button onClick={getDrawing}> {drawing.title} </button>
+                ))}
               </section>
             </Utils>
           </div>
