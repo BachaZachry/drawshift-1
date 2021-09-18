@@ -189,6 +189,15 @@ const Chart = () => {
     sendJsonMessage(a);
   }, [setElements]);
 
+  // Adding edge
+  const onConnect = (params) => {
+    setElements((els) => addEdge(params, els));
+    let a = [];
+    a.push(params);
+    a.push({ typeofoperation: "addEdge" });
+    sendJsonMessage(a);
+  };
+
   // Handling different updates
   useEffect(() => {
     // avoiding issues on startup
@@ -213,6 +222,9 @@ const Chart = () => {
         let newNode = lastJsonMessage["message"][0];
         console.log(newNode);
         setElements((els) => els.concat(newNode));
+      } else if (typeofoperation == "addEdge") {
+        let newEdge = lastJsonMessage["message"][0];
+        setElements((els) => addEdge(newEdge, els));
       }
     }
   }, [lastJsonMessage]);
