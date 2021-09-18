@@ -210,7 +210,7 @@ const Drawing = () => {
 
   Polling;
   useInterval(() => {
-    sendJsonMessage(paths);
+    sendJsonMessage(path);
   }, 5000);
 
   return (
