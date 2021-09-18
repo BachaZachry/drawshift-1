@@ -1,16 +1,14 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from './store';
+import { uiState } from './uiLoginSlice';
 
-export interface uiState {
-    isOpen: boolean
-}
 
 const initialState: uiState = {
     isOpen: false
 }
 
-export const uiLoginSlice = createSlice({
-    name:'uiLogin',
+export const uiBoardSlice = createSlice({
+    name:'uiBoard',
     initialState,
     reducers: {
         open: (state) => {
@@ -22,6 +20,6 @@ export const uiLoginSlice = createSlice({
     }
 });
 
-export const {open, close} = uiLoginSlice.actions;
-export const uiLoginState = (state: RootState) => state.uiLogin.isOpen
-export default uiLoginSlice.reducer
+export const {open, close} = uiBoardSlice.actions;
+export const uiBoardState = (state: RootState) => state.uiBoard.isOpen
+export default uiBoardSlice.reducer
