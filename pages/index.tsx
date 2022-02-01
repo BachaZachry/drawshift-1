@@ -1,13 +1,9 @@
-import { useEffect } from "react";
 import { AuthPopup } from "components/Auth";
 import Header from "components/Header";
 import Navbar from "components/Navbar";
-import { useRouter } from "next/router";
 import Head from "next/head";
 import Card from "components/landing/Card";
 import { Toaster } from "react-hot-toast";
-import { useAppDispatch, useAppSelector } from "lib/hooks";
-import { loadUser, uStatus } from "lib/userSlice";
 
 export default function Home() {
   return (

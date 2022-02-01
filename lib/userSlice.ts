@@ -18,7 +18,6 @@ const initialState: UserState = {
 export const loadUser = createAsyncThunk('user/loadUser', async(obj, {rejectWithValue}) => {
     try{
          const response = await api.get('users/loaduser/');
-         console.log(response)
          return response.data
     }
     catch(err) {
@@ -42,7 +41,17 @@ export const loadUser = createAsyncThunk('user/loadUser', async(obj, {rejectWith
          return rejectWithValue(err.response.data);
      }
  })
-
+export const logoutUser = createAsyncThunk('user/logoutUser', async(obj, {rejectWithValue}) => {
+    try {
+        const response = await api.post('users/logout/');
+        localStorage.removeItem('token');
+        api.defaults.headers['Authorization'] = null;
+        return response.data;
+    }
+    catch(err) {
+        return rejectWithValue(err.response.data);
+    }
+})
 export const userSlice = createSlice({
     name:'user',
     initialState,
@@ -68,6 +77,17 @@ export const userSlice = createSlice({
             state.username = action.payload.user
         }),
         builder.addCase(googleUserLogin.rejected , (state, action) => {
+            state.status = 'failed'
+            state.error = action.payload
+        }),
+        builder.addCase(logoutUser.pending , (state, action) => {
+            state.status = 'loading'
+        }),
+        builder.addCase(logoutUser.fulfilled , (state, action) => {
+            state.status = 'succeeded'
+            state.username = null
+        }),
+        builder.addCase(logoutUser.rejected , (state, action) => {
             state.status = 'failed'
             state.error = action.payload
         })

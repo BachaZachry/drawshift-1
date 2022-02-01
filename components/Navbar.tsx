@@ -2,7 +2,7 @@ import { Disclosure } from "@headlessui/react";
 import { LoginIcon } from "@heroicons/react/solid";
 import { useAppDispatch, useAppSelector } from "lib/hooks";
 import { open, close } from "lib/uiLoginSlice";
-import { loadUser, username, uStatus } from "lib/userSlice";
+import { loadUser, username, uStatus, logoutUser } from "lib/userSlice";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 
@@ -19,7 +19,7 @@ export default function Navbar() {
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   const logout = () => {
-    console.log("log out");
+    dispatch(logoutUser());
   };
   const openLoginForm = () => {
     dispatch(open());
