@@ -1,4 +1,5 @@
 import tw, { styled } from "twin.macro";
+import { open, close } from "lib/uiLoginSlice";
 
 export const CardBackground = styled.div`
   ${tw`m-auto overflow-hidden rounded-lg shadow-xl max-w-7xl sm:px-6 lg:px-8 bg-gradient-to-r from-orange-400 to-pink-500 lg:grid lg:grid-cols-2 lg:gap-4`}
@@ -12,16 +13,16 @@ export const CardTitle = styled.h2`
   ${tw`text-3xl font-extrabold text-white sm:text-4xl`}
 `;
 
-export const CardButton = styled.button`
+export const CardButton = styled.a`
   ${tw`inline-flex items-center px-6 py-3 mt-8 text-base font-medium text-red-600 bg-orange-100 border border-transparent rounded-md shadow hover:text-red-500`}
 `;
 
 export const CardImage = styled.img`
-  ${tw`object-cover transform translate-x-6 rounded-md sm:translate-x-16`}
+  ${tw`object-cover rounded-md`}
 `;
 const Card = () => {
   return (
-    <main className="-mt-24 font-monst relative">
+    <main className="-mt-32 font-monst relative ">
       <CardBackground>
         <CardContent>
           <div className="lg:self-center">
@@ -30,13 +31,17 @@ const Card = () => {
               <span className="block text-red-900">Get started for free.</span>
             </CardTitle>
             <p className="mt-4 text-lg leading-6 text-orange-50">
-              Find all what Drawshift has to offer free of charge, and
-              pay-as-you go for features that you like.
+              Find all what Drawshift has to offer free of charge.
             </p>
-            <CardButton href="#">Sign up for free</CardButton>
+            <CardButton
+              href="https://github.com/BachaZachry/drawshift-1"
+              target="_blank"
+            >
+              Source Code
+            </CardButton>
           </div>
         </CardContent>
-        <div className="flex items-start pt-10 pb-12 lg:pt-12">
+        <div className="flex items-start pt-10 pb-12 pr-2 pl-2 lg:pt-12 ">
           <CardImage src="/drawshift.gif" alt="App screenshot" />
         </div>
       </CardBackground>
