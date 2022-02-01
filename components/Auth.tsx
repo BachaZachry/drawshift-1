@@ -52,8 +52,9 @@ export const AuthPopup = () => {
 
           <div className="px-16 py-8">
             <GoogleLogin
+              className="!rounded-lg"
               clientId="865137569538-2k4mc40dur78flg8p1ncbu39h9n1tjtr.apps.googleusercontent.com"
-              buttonText="Log in with Google"
+              buttonText="Login with Google"
               onSuccess={responseGoogle}
               onFailure={(err) => console.log(err)}
             />

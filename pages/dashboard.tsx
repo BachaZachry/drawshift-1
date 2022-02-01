@@ -46,7 +46,13 @@ import { useRouter } from "next/router";
 import Head from "next/head";
 import DeleteForm from "components/Settings";
 import dayjs from "dayjs";
-import { username, UserState, uStatus, loadUser } from "../lib/userSlice";
+import {
+  username,
+  UserState,
+  uStatus,
+  loadUser,
+  logoutUser,
+} from "../lib/userSlice";
 import { useAppSelector, useAppDispatch } from "lib/hooks";
 import { open } from "lib/uiBoardSlice";
 import { RootState } from "lib/store";
@@ -87,7 +93,7 @@ const navigation = [
 ];
 
 const userNavigation = [
-  { name: "Your Profile", href: "#" },
+  { name: "Your Profile", href: "/dashboard" },
   { name: "Sign out", href: "#" },
 ];
 
@@ -108,17 +114,17 @@ const Dasboard = () => {
   const router = useRouter();
   const drawings = useAppSelector((state: RootState) => state.drawing.drawings);
 
+  const logout = () => {
+    dispatch(logoutUser());
+  };
   const getDrawing = () => {};
   // If a token is available,check if it's valid
   useEffect(() => {
     if (userStatus == "idle") {
       dispatch(loadUser());
-    }
-  }, [userStatus]);
-
-  // Redirect to the landing page if the token is invalid
-  useEffect(() => {
-    if (userStatus == "failed") {
+    } else if (userStatus == "failed") {
+      router.push("/");
+    } else if (userStatus == "succeeded" && token == null) {
       router.push("/");
     }
   }, [userStatus]);
@@ -243,56 +249,20 @@ const Dasboard = () => {
                     <XIcon className="block w-6 h-6" aria-hidden="true" />
                   </button>
                 </div>
-
-                <div className="px-2 py-3 mx-auto max-w-8xl sm:px-4">
-                  {navigation.map((item) => (
-                    <Fragment key={item.name}>
-                      <a
-                        href={item.href}
-                        className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-100"
-                      >
-                        {item.name}
-                      </a>
-                      {item.children.map((child) => (
-                        <a
-                          key={child.name}
-                          href={child.href}
-                          className="block py-2 pl-5 pr-3 text-base font-medium text-gray-500 rounded-md hover:bg-gray-100"
-                        >
-                          {child.name}
-                        </a>
-                      ))}
-                    </Fragment>
-                  ))}
-                </div>
                 <div className="pt-4 pb-3 border-t border-gray-200">
-                  <div className="flex items-center px-4 mx-auto max-w-8xl sm:px-6">
-                    <div className="flex-1 min-w-0 ml-3">
-                      <div className="text-base font-medium text-gray-800 truncate">
-                        {usrname}
-                      </div>
-                      <div className="text-sm font-medium text-gray-500 truncate">
-                        {usrname}
-                      </div>
-                    </div>
+                  <div className="px-2 mx-auto space-y-1 max-w-8xl sm:px-4">
                     <a
-                      href="#"
-                      className="flex-shrink-0 p-2 ml-auto text-gray-400 bg-white hover:text-gray-500"
+                      href="/dashboard"
+                      className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
                     >
-                      <span className="sr-only">View notifications</span>
-                      <BellIcon className="w-6 h-6" aria-hidden="true" />
+                      Your Profile
                     </a>
-                  </div>
-                  <div className="px-2 mx-auto mt-3 space-y-1 max-w-8xl sm:px-4">
-                    {userNavigation.map((item) => (
-                      <a
-                        key={item.name}
-                        href={item.href}
-                        className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
-                      >
-                        {item.name}
-                      </a>
-                    ))}
+                    <button
+                      className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
+                      onClick={logout}
+                    >
+                      Sign out
+                    </button>
                   </div>
                 </div>
               </nav>
@@ -373,7 +343,7 @@ const Dasboard = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => console.log("log out")}
+                    onClick={logout}
                     className="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition duration-200 rounded-md shadow-lg bg-secondary hover:bg-primary hover:text-gray-100 focus:outline-none"
                   >
                     Logout

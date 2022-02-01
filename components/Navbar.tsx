@@ -25,18 +25,15 @@ export default function Navbar() {
     dispatch(open());
   };
 
-  // If a token is available,check if it's valid
   useEffect(() => {
+    // If a token is available,check if it's valid
     if (userStatus == "idle" || userStatus == "failed") {
       if (token != null) {
         dispatch(loadUser());
       }
     }
-  }, [userStatus]);
-
-  // Close login form when you successfully login
-  useEffect(() => {
-    if (userStatus == "succeeded") {
+    // Close login form when you successfully login
+    else if (userStatus == "succeeded") {
       dispatch(close());
     }
   }, [userStatus]);
