@@ -10,13 +10,16 @@ import {
   UserCircleIcon,
   XIcon,
 } from "@heroicons/react/outline";
-// import {
-//   ReplyIcon,
-//   SaveAsIcon,
-//   TrashIcon,
-//   CheckIcon,
-//   SelectorIcon,
-// } from "@heroicons/react/solid";
+import {
+  ReplyIcon,
+  SaveAsIcon,
+  TrashIcon,
+  CheckIcon,
+  SelectorIcon,
+  PencilIcon,
+  FastForwardIcon,
+  XCircleIcon,
+} from "@heroicons/react/solid";
 import Head from "next/head";
 import React, {
   Fragment,
@@ -331,12 +334,11 @@ const Drawing = () => {
                 value={title}
                 onChange={changeTitle}
               />
-              <button onClick={onSubmit}>Save</button>
             </div>
             <div className="flex mt-5 lg:mt-0 lg:ml-4">
-              {/* <span className="">
+              <span className="">
                 <button
-                  onClick={() => saveableCanvas.undo()}
+                  onClick={undoHandler}
                   type="button"
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
@@ -346,11 +348,11 @@ const Drawing = () => {
                   />
                   Undo
                 </button>
-              </span> */}
+              </span>
 
-              {/* <span className="ml-3">
+              <span className="ml-3">
                 <button
-                  onClick={() => saveableCanvas.clear()}
+                  onClick={resetCanvasHandler}
                   type="button"
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
@@ -360,11 +362,50 @@ const Drawing = () => {
                   />
                   Clear
                 </button>
-              </span> */}
-
-              {/* <span className="ml-3">
+              </span>
+              <span className="ml-3">
                 <button
-                  onClick={() => saveBoard()}
+                  onClick={redoHandler}
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <FastForwardIcon
+                    className="w-5 h-5 mr-2 -ml-1 text-gray-500"
+                    aria-hidden="true"
+                  />
+                  Redo
+                </button>
+              </span>
+              <span className="ml-3">
+                <button
+                  onClick={eraserHandler}
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <XCircleIcon
+                    className="w-5 h-5 mr-2 -ml-1 text-gray-500"
+                    aria-hidden="true"
+                  />
+                  Eraser
+                </button>
+              </span>
+              <span className="ml-3">
+                <button
+                  onClick={penHandler}
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <PencilIcon
+                    className="w-5 h-5 mr-2 -ml-1 text-gray-500"
+                    aria-hidden="true"
+                  />
+                  Pen
+                </button>
+              </span>
+
+              <span className="ml-3">
+                <button
+                  onClick={onSubmit}
                   type="button"
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
@@ -374,22 +415,10 @@ const Drawing = () => {
                   />
                   Save
                 </button>
-              </span> */}
-
-              {/* Dropdown */}
+              </span>
             </div>
           </div>
           <div className="h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl">
-            <button onClick={undoHandler}> Undo </button>
-
-            <button onClick={redoHandler}> Redo </button>
-
-            <button onClick={resetCanvasHandler}> Reset </button>
-
-            <button onClick={eraserHandler}> Eraser </button>
-
-            <button onClick={penHandler}> Pen </button>
-
             {/* <button onClick={svgExportHandler}> Export SVG </button> */}
 
             <ReactSketchCanvas

@@ -216,15 +216,6 @@ const Chart = () => {
     }
   }, [lastJsonMessage]);
 
-  // @ts-ignore
-  // const { isLoading, error, data } = useQuery("userData", () =>
-  //   fetchUser.then((res) => setUser(res))
-  // );
-
-  // if (isLoading) return <Spinner />;
-
-  // if (error) return "An error has occurred: " + error.message;
-
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">
       {/* Top nav*/}
@@ -236,7 +227,7 @@ const Chart = () => {
         {/* Logo area */}
         <div className="absolute inset-y-0 left-0 md:static md:flex-shrink-0">
           <a
-            href="#"
+            href="/dashboard"
             className="flex items-center justify-center w-16 h-16 bg-none md:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:w-20"
           >
             <img
