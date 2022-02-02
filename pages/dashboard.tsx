@@ -383,23 +383,15 @@ const Dasboard = () => {
                 <button
                   onClick={() => router.push("/drawing")}
                   type="button"
-                  className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow w-11 h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
+                  className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow h-11  bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >
-                  <ViewGridAddIcon
-                    className="w-full h-full fill-current"
-                    aria-hidden="true"
-                  />
                   <h3>New Drawing</h3>
                 </button>
                 <button
-                  onClick={() => router.push("/dashboard")}
+                  onClick={() => router.push("/chart")}
                   type="button"
-                  className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow w-11 h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
+                  className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >
-                  <ViewGridAddIcon
-                    className="w-full h-full fill-current"
-                    aria-hidden="true"
-                  />
                   <h3>New Diagram</h3>
                 </button>
               </SearchbarContainer>
