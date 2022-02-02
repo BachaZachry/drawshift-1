@@ -33,47 +33,23 @@ import { HexColorPicker } from "react-colorful";
 import { ReactSketchCanvas } from "react-sketch-canvas";
 import useInterval from "lib/useInterval";
 import { useAppDispatch, useAppSelector } from "lib/hooks";
-import { loadUser, uStatus } from "lib/userSlice";
+import { loadUser, logoutUser, uStatus } from "lib/userSlice";
 import { useRouter } from "next/router";
 import { postDrawing } from "lib/drawingSlice";
 
-let saveableCanvas: {
-  clear: () => void;
-  getSaveData: () => string;
-  undo: () => void;
-};
-
-const navigation = [
-  {
-    name: "Inboxes",
-    href: "#",
-    children: [
-      { name: "Technical Support", href: "#" },
-      { name: "Sales", href: "#" },
-      { name: "General", href: "#" },
-    ],
-  },
-  { name: "Reporting", href: "#", children: [] },
-  { name: "Settings", href: "#", children: [] },
-];
 const sidebarNavigation = [
   { name: "Open", href: "#", icon: InboxIcon, current: true },
-  { name: "Archive", href: "#", icon: ArchiveIcon, current: false },
-  { name: "Customers", href: "#", icon: UserCircleIcon, current: false },
-  { name: "Flagged", href: "#", icon: FlagIcon, current: false },
-  { name: "Spam", href: "#", icon: BanIcon, current: false },
-  { name: "Drafts", href: "#", icon: PencilAltIcon, current: false },
-];
-const userNavigation = [
-  { name: "Your Profile", href: "#" },
-  { name: "Sign out", href: "#" },
+  {
+    name: "Your Profile",
+    href: "/dashboard",
+    icon: UserCircleIcon,
+    current: false,
+  },
 ];
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
-
-const getNodeId = () => `randomnode_${+new Date()}`;
 
 // Drawing
 
@@ -106,7 +82,9 @@ const Drawing = () => {
     [ReadyState.CLOSED]: "Closed",
     [ReadyState.UNINSTANTIATED]: "Uninstantiated",
   }[readyState];
-
+  const logout = () => {
+    dispatch(logoutUser());
+  };
   const changeTitle = (e) => {
     setTitle(e.target.value);
   };
@@ -198,10 +176,10 @@ const Drawing = () => {
     }
   }, [lastJsonMessage]);
 
-  // Polling
-  useInterval(() => {
-    sendJsonMessage(path);
-  }, 5000);
+  // // Polling
+  // useInterval(() => {
+  //   sendJsonMessage(path);
+  // }, 5000);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">
@@ -214,7 +192,7 @@ const Drawing = () => {
         {/* Logo area */}
         <div className="absolute inset-y-0 left-0 md:static md:flex-shrink-0">
           <a
-            href="#"
+            href="/dashboard"
             className="flex items-center justify-center w-16 h-16 bg-none md:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:w-20"
           >
             <img
@@ -293,62 +271,20 @@ const Drawing = () => {
                   </button>
                 </div>
 
-                <div className="px-2 py-3 mx-auto max-w-8xl sm:px-4">
-                  {navigation.map((item) => (
-                    <Fragment key={item.name}>
-                      <a
-                        href={item.href}
-                        className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-100"
-                      >
-                        {item.name}
-                      </a>
-                      {item.children.map((child) => (
-                        <a
-                          key={child.name}
-                          href={child.href}
-                          className="block py-2 pl-5 pr-3 text-base font-medium text-gray-500 rounded-md hover:bg-gray-100"
-                        >
-                          {child.name}
-                        </a>
-                      ))}
-                    </Fragment>
-                  ))}
-                </div>
                 <div className="pt-4 pb-3 border-t border-gray-200">
-                  {/* <div className="flex items-center px-4 mx-auto max-w-8xl sm:px-6">
-                    <div className="flex-shrink-0">
-                      <img
-                        className="w-10 h-10 rounded-full"
-                        src={user.user_metadata.avatar_url}
-                        alt=""
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 ml-3">
-                      <div className="text-base font-medium text-gray-800 truncate">
-                        {data?.user_metadata.full_name}
-                      </div>
-                      <div className="text-sm font-medium text-gray-500 truncate">
-                        {data?.user_metadata!.full_name}
-                      </div>
-                    </div>
+                  <div className="px-2 mx-auto space-y-1 max-w-8xl sm:px-4">
                     <a
-                      href="#"
-                      className="flex-shrink-0 p-2 ml-auto text-gray-400 bg-white hover:text-gray-500"
+                      href="/dashboard"
+                      className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
                     >
-                      <span className="sr-only">View notifications</span>
-                      <BellIcon className="w-6 h-6" aria-hidden="true" />
+                      Your Profile
                     </a>
-                  </div> */}
-                  <div className="px-2 mx-auto mt-3 space-y-1 max-w-8xl sm:px-4">
-                    {userNavigation.map((item) => (
-                      <a
-                        key={item.name}
-                        href={item.href}
-                        className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
-                      >
-                        {item.name}
-                      </a>
-                    ))}
+                    <button
+                      className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
+                      onClick={logout}
+                    >
+                      Sign out
+                    </button>
                   </div>
                 </div>
               </nav>
@@ -468,7 +404,7 @@ const Drawing = () => {
             />
             <HexColorPicker color={color} onChange={setColor} />
           </div>
-          <span>The WebSocket is currently {connectionStatus}</span>
+          {/* <span>The WebSocket is currently {connectionStatus}</span> */}
         </Main>
       </div>
     </div>
