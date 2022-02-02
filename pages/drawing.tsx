@@ -10,13 +10,13 @@ import {
   UserCircleIcon,
   XIcon,
 } from "@heroicons/react/outline";
-import {
-  ReplyIcon,
-  SaveAsIcon,
-  TrashIcon,
-  CheckIcon,
-  SelectorIcon,
-} from "@heroicons/react/solid";
+// import {
+//   ReplyIcon,
+//   SaveAsIcon,
+//   TrashIcon,
+//   CheckIcon,
+//   SelectorIcon,
+// } from "@heroicons/react/solid";
 import Head from "next/head";
 import React, {
   Fragment,
@@ -26,13 +26,6 @@ import React, {
   useRef,
 } from "react";
 import "react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css";
-import ReactFlow, {
-  removeElements,
-  addEdge,
-  MiniMap,
-  Controls,
-  Background,
-} from "react-flow-renderer";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { Main } from "../components/styled/board.styled";
 import { HexColorPicker } from "react-colorful";
@@ -132,11 +125,8 @@ const Drawing = () => {
     if (userStatus == "idle") {
       dispatch(loadUser());
     }
-  }, [userStatus]);
-
-  // Redirect to the landing page if the token is invalid
-  useEffect(() => {
-    if (userStatus == "failed") {
+    // Redirect to the landing page if the token is invalid
+    else if (userStatus == "failed") {
       router.push("/");
     }
   }, [userStatus]);
@@ -203,12 +193,12 @@ const Drawing = () => {
   useEffect(() => {
     if (lastJsonMessage != null) {
       console.log(lastJsonMessage["message"]);
-      updateHandler(lastJsonMessage["message"]);
+      onUpdate(lastJsonMessage["message"]);
       loadPath(lastJsonMessage["message"]);
     }
   }, [lastJsonMessage]);
 
-  Polling;
+  // Polling
   useInterval(() => {
     sendJsonMessage(path);
   }, 5000);
@@ -478,7 +468,7 @@ const Drawing = () => {
             />
             <HexColorPicker color={color} onChange={setColor} />
           </div>
-          {/* <span>The WebSocket is currently {connectionStatus}</span> */}
+          <span>The WebSocket is currently {connectionStatus}</span>
         </Main>
       </div>
     </div>
