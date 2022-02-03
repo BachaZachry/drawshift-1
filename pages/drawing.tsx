@@ -158,6 +158,7 @@ const Drawing = () => {
       a.href = res;
       a.download = "Image.jpeg";
       a.click();
+      a.remove();
     });
   };
   // Load unto the canvas
@@ -336,16 +337,29 @@ const Drawing = () => {
         <Main>
           {/* Page header */}
           <div className="flex flex-col items-center justify-between mx-auto mt-2 md:flex-row max-w-7xl">
-            <div className="flex-1 min-w-0">
-              <nav className="flex" aria-label="Breadcrumb"></nav>
+            <nav className="flex" aria-label="Breadcrumb"></nav>
+            <form className="flex flex-grow" onSubmit={onSubmit}>
               <input
-                className="flex-grow px-4 py-2 text-sm font-medium text-gray-700 transition duration-200 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="inline-flex px-4 py-2 my-1 text-sm font-medium text-gray-700 transition duration-200 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 placeholder="Title"
                 value={title}
                 onChange={changeTitle}
+                required
               />
-            </div>
-            <div className="flex flex-wrap justify-start mt-5 lg:mt-0 lg:ml-4">
+              <span className="ml-3">
+                <button
+                  type="submit"
+                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <SaveAsIcon
+                    className="w-5 h-5 mr-2 -ml-1"
+                    aria-hidden="true"
+                  />
+                  Save
+                </button>
+              </span>
+            </form>
+            <div className="flex flex-wrap justify-center mt-5 lg:mt-0 lg:ml-4">
               <span className="ml-3">
                 <button
                   onClick={undoHandler}
@@ -415,19 +429,6 @@ const Drawing = () => {
 
               <span className="ml-3">
                 <button
-                  onClick={onSubmit}
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <SaveAsIcon
-                    className="w-5 h-5 mr-2 -ml-1"
-                    aria-hidden="true"
-                  />
-                  Save
-                </button>
-              </span>
-              <span className="ml-3">
-                <button
                   onClick={exportImage}
                   type="button"
                   className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -442,8 +443,6 @@ const Drawing = () => {
             </div>
           </div>
           <div className="h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl">
-            {/* <button onClick={svgExportHandler}> Export SVG </button> */}
-
             <ReactSketchCanvas
               className="rounded-xl"
               ref={canvasRef}
