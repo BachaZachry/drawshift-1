@@ -54,9 +54,10 @@ import {
   logoutUser,
 } from "../lib/userSlice";
 import { useAppSelector, useAppDispatch } from "lib/hooks";
-import { open } from "lib/uiBoardSlice";
+import { open } from "lib/uiLoginSlice";
 import { RootState } from "lib/store";
 import { loadDrawings } from "lib/drawingSlice";
+import { RoomPopup } from "components/RoomPopup";
 
 const tabs = [{ name: "Boards", href: "#", current: true }];
 
@@ -64,37 +65,6 @@ const views = [
   { id: 1, name: "Wade Cooper" },
   { id: 2, name: "Arlene Mccoy" },
   { id: 3, name: "Devon Webb" },
-];
-
-const positions = [
-  {
-    id: 1,
-    title: "Click here to create your first board",
-    type: "Tutorial",
-    location: "Canvas",
-    department: "Private",
-    closeDate: "2020-01-07",
-    closeDateFull: "January 7, 2020",
-  },
-];
-
-const navigation = [
-  {
-    name: "Inboxes",
-    href: "/dashboard",
-    children: [
-      { name: "Technical Support", href: "/dashboard" },
-      { name: "Sales", href: "/dashboard" },
-      { name: "General", href: "/dashboard" },
-    ],
-  },
-  { name: "Reporting", href: "/dashboard", children: [] },
-  { name: "Settings", href: "/dashboard", children: [] },
-];
-
-const userNavigation = [
-  { name: "Your Profile", href: "/dashboard" },
-  { name: "Sign out", href: "#" },
 ];
 
 function classNames(...classes) {
@@ -133,28 +103,10 @@ const Dasboard = () => {
     dispatch(loadDrawings());
   }, []);
 
-  // const Logout = () => {
-  //   supabase.auth.signOut();
-  //   router.push("/");
-  // };
   const [boards, setBoards] = useState();
-
-  // const fetchBoards = async () => {
-  //   const { data: boards, error } = await supabase.from("boards").select("*");
-  //   setBoards(boards);
-  //   console.log("boards", boards);
-  //   console.log("error", error);
-  // };
-
-  // const loadBoard = (id) => {
-  //   console.log(boards[id]);
-  //   canvas.setBoard(decomp(boards[id].board));
-  //   canvas.setTitle(boards[id].title);
-  //   canvas.setDescription(boards[id].description);
-  //   console.log("title", boards[id].title);
-  //   router.push("/board");
-  // };
-  // @ts-ignore
+  const openLoginForm = () => {
+    dispatch(open());
+  };
 
   if (userStatus == "pending") return <Spinner />;
 
@@ -233,7 +185,7 @@ const Dasboard = () => {
                 aria-label="Global"
               >
                 <div className="flex items-center justify-between h-16 px-4 sm:px-6">
-                  <a href="#">
+                  <a href="/dashboard">
                     <img
                       className="block w-auto h-8"
                       src="https://tailwindui.com/img/logos/workflow-mark.svg?color=indigo&shade=500"
@@ -273,30 +225,6 @@ const Dasboard = () => {
 
       {/* Bottom section */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* Narrow sidebar*/}
-        {/* <nav
-          aria-label="Sidebar"
-          className="hidden shadow-xl md:block md:flex-shrink-0 md:bg-gray-800 md:overflow-y-auto"
-        >
-          <div className="relative flex flex-col w-20 p-3 space-y-3">
-            {sidebarNavigation.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className={classNames(
-                  item.current
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-400 hover:bg-gray-700",
-                  "flex-shrink-0 inline-flex items-center justify-center h-14 w-14 rounded-lg"
-                )}
-              >
-                <span className="sr-only">{item.name}</span>
-                <item.icon className="w-6 h-6" aria-hidden="true" />
-              </a>
-            ))}
-          </div>
-        </nav> */}
-
         {/* Main area */}
         <Main>
           {/* Page header */}
@@ -370,16 +298,6 @@ const Dasboard = () => {
                     aria-hidden="true"
                   />
                 </Search>
-                {/* <button
-                  type="button"
-                  onClick={() => ui.setDeleteForm(true)}
-                  className="items-center p-2 text-gray-400 transition duration-200 rounded-md shadow-sm w-11 h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
-                >
-                  <FilterIcon
-                    className="w-full h-full fill-current "
-                    aria-hidden="true"
-                  />
-                </button> */}
                 <button
                   onClick={() => router.push("/drawing")}
                   type="button"
@@ -393,6 +311,14 @@ const Dasboard = () => {
                   className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >
                   <h3>New Diagram</h3>
+                </button>
+                <RoomPopup />
+                <button
+                  onClick={openLoginForm}
+                  type="button"
+                  className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
+                >
+                  <h3>Join a room</h3>
                 </button>
               </SearchbarContainer>
             </Searchbar>

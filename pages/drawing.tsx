@@ -453,9 +453,10 @@ const Drawing = () => {
               allowOnlyPointerType="all"
               onUpdate={onUpdate}
             />
+          </div>
+          <div className="flex flex-wrap justify-center mt-5 lg:mt-0 lg:ml-4">
             <HexColorPicker color={color} onChange={setColor} />
           </div>
-          {/* <span>The WebSocket is currently {connectionStatus}</span> */}
         </Main>
       </div>
     </div>
