@@ -31,6 +31,7 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 import { Main } from "../components/styled/board.styled";
 import { HexColorPicker } from "react-colorful";
 import { logoutUser } from "lib/userSlice";
+import { useRouter } from "next/router";
 
 let saveableCanvas: {
   clear: () => void;
@@ -91,9 +92,8 @@ const Chart = () => {
     { id: "e2-3", source: "2", target: "3", animated: true },
   ]);
   const [userData, setuserData] = useState();
-  const [socketUrl, setSocketUrl] = useState(
-    "ws://localhost:3003/ws/chat/someroom/"
-  );
+  const [roomId, setRoomId] = useState(getNodeId());
+  const [socketUrl, setSocketUrl] = useState("ws://localhost:3003/ws/chat/");
   const {
     sendMessage,
     sendJsonMessage,
@@ -108,27 +108,10 @@ const Chart = () => {
     [ReadyState.CLOSED]: "Closed",
     [ReadyState.UNINSTANTIATED]: "Uninstantiated",
   }[readyState];
+  const router = useRouter();
   const logout = () => {
     dispatch(logoutUser());
   };
-  // Updating the position
-  // useEffect(() => {
-  //   if (lastMessage != null) {
-  //     setElements((els) =>
-  //       els.map((el) => {
-  //         let v = lastMessage.data.split(",");
-  //         if (el.id === v[1]) {
-  //           el.position = {
-  //             x: parseInt(v[3]),
-  //             y: parseInt(v[5]),
-  //           };
-  //           v = [0, 0, 0, 0, 0, 0];
-  //         }
-  //         return el;
-  //       })
-  //     );
-  //   }
-  // }, [lastMessage]);
 
   const onUpdateGraph = (e, n) => {
     setElements((els) =>
@@ -175,7 +158,14 @@ const Chart = () => {
     a.push({ typeofoperation: "add" });
     sendJsonMessage(a);
   }, [setElements]);
-
+  useEffect(() => {
+    if (router.query.id) {
+      setSocketUrl("ws://localhost:3003/ws/chat/" + router.query.id + "/");
+      console.log(router.query.id);
+    } else {
+      setSocketUrl("ws://localhost:3003/ws/chat/" + roomId + "/");
+    }
+  }, []);
   // Adding edge
   const onConnect = (params) => {
     setElements((els) => addEdge(params, els));

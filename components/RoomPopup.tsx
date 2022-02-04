@@ -15,9 +15,13 @@ export const RoomPopup = () => {
   const closeModal = () => {
     dispatch(close());
   };
-  const openRoom = (e) => {
+  const openDrawingRoom = (e) => {
     e.preventDefault();
     router.push({ pathname: "/drawing", query: { id: room } });
+  };
+  const openChartingRoom = (e) => {
+    e.preventDefault();
+    router.push({ pathname: "/chart", query: { id: room } });
   };
   const changeRoom = (e) => {
     setRoom(e.target.value);
@@ -49,7 +53,7 @@ export const RoomPopup = () => {
               <XIcon className="w-5 h-5 text-green-400" aria-hidden="true" />
             </button>
           </div>
-          <form className="flex flex-col" onSubmit={openRoom}>
+          <form className="flex flex-col">
             <input
               type="text"
               placeholder="Room Id"
@@ -62,6 +66,7 @@ export const RoomPopup = () => {
               <span className="ml-3 my-3">
                 <button
                   type="submit"
+                  onClick={openDrawingRoom}
                   className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Drawing Room
@@ -70,6 +75,7 @@ export const RoomPopup = () => {
               <span className="mx-3 my-3">
                 <button
                   type="submit"
+                  onClick={openChartingRoom}
                   className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Charting Room
