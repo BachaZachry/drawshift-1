@@ -20,6 +20,7 @@ import {
   FastForwardIcon,
   XCircleIcon,
   DownloadIcon,
+  DuplicateIcon,
 } from "@heroicons/react/solid";
 import Head from "next/head";
 import React, {
@@ -64,6 +65,7 @@ const Drawing = () => {
   const [color, setColor] = useState("#aabbcc");
   const [isDrawing, setIsDrawing] = useState(false);
   const userStatus = useAppSelector(uStatus);
+  const [roomId, setRoomId] = useState(getNodeId());
   const [socketUrl, setSocketUrl] = useState("ws://localhost:3003/ws/chat/");
   const [path, setPaths] = useState<CanvasPath[]>([]);
   const [title, setTitle] = useState("");
@@ -92,7 +94,7 @@ const Drawing = () => {
       setSocketUrl("ws://localhost:3003/ws/chat/" + router.query.id + "/");
       console.log(router.query.id);
     } else {
-      setSocketUrl("ws://localhost:3003/ws/chat/" + getNodeId() + "/");
+      setSocketUrl("ws://localhost:3003/ws/chat/" + roomId + "/");
     }
   }, []);
 
@@ -333,7 +335,7 @@ const Drawing = () => {
         {/* Main area */}
         <Main>
           {/* Page header */}
-          <div className="flex flex-col items-center justify-between mx-auto mt-2 md:flex-row max-w-7xl">
+          <div className="flex flex-col items-center justify-between mx-auto mt-2 lg:flex-row max-w-7xl">
             <nav className="flex" aria-label="Breadcrumb"></nav>
             <form className="flex flex-grow" onSubmit={onSubmit}>
               <input
@@ -423,7 +425,19 @@ const Drawing = () => {
                   Pen
                 </button>
               </span>
-
+              <span className="ml-3">
+                <button
+                  onClick={() => navigator.clipboard.writeText(roomId)}
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <DuplicateIcon
+                    className="w-5 h-5 mr-2 -ml-1 text-gray-500"
+                    aria-hidden="true"
+                  />
+                  Copy Room Id
+                </button>
+              </span>
               <span className="ml-3">
                 <button
                   onClick={exportImage}
