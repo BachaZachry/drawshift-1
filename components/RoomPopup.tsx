@@ -17,11 +17,11 @@ export const RoomPopup = () => {
   };
   const openRoom = (e) => {
     e.preventDefault();
+    router.push({ pathname: "/drawing", query: { id: room } });
   };
   const changeRoom = (e) => {
     setRoom(e.target.value);
   };
-
   return (
     <Transition
       show={loginForm}

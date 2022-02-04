@@ -36,7 +36,7 @@ export const Searchbar = styled.div`
 `;
 
 export const SearchbarContainer = styled.div`
-  ${tw`flex flex-row w-full space-x-4 items-center h-12`}
+  ${tw`flex flex-row flex-wrap justify-center w-full space-x-4 items-center`}
 `;
 export const Utils = styled.div`
   ${tw`max-w-6xl px-4 pt-8 mx-auto sm:px-6 lg:px-0`}

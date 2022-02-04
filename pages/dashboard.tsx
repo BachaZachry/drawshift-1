@@ -103,7 +103,6 @@ const Dasboard = () => {
     dispatch(loadDrawings());
   }, []);
 
-  const [boards, setBoards] = useState();
   const openLoginForm = () => {
     dispatch(open());
   };
@@ -116,24 +115,8 @@ const Dasboard = () => {
         <title>Drawshift | Dashboard</title>
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
       </Head>
-      {/* <DeleteForm /> */}
-      {/* <NewBoard /> */}
       {/* Top nav*/}
       <header className="relative flex items-center flex-shrink-0 h-16 bg-primary">
-        {/* Logo area */}
-        {/* <div className="absolute inset-y-0 left-0 md:static md:flex-shrink-0">
-          <a
-            href="#"
-            className="flex items-center justify-center w-16 h-16 bg-none md:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:w-20"
-          >
-            <img
-              className="w-auto h-8"
-              src="https://tailwindui.com/img/logos/workflow-mark.svg?color=white"
-              alt="Workflow"
-            />
-          </a>
-        </div> */}
-
         {/* Menu button area */}
         <div className="absolute inset-y-0 right-0 flex items-center pr-4 sm:pr-6 md:hidden">
           {/* Mobile menu button */}
@@ -298,300 +281,37 @@ const Dasboard = () => {
                     aria-hidden="true"
                   />
                 </Search>
+
                 <button
                   onClick={() => router.push("/drawing")}
                   type="button"
-                  className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow h-11  bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
+                  className="relative inline-flex items-center p-2  my-2 text-gray-400 transition duration-200 rounded-md shadow h-11  bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >
                   <h3>New Drawing</h3>
                 </button>
                 <button
                   onClick={() => router.push("/chart")}
                   type="button"
-                  className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
+                  className="relative inline-flex items-center p-2  my-2 text-gray-400 transition duration-200 rounded-md shadow h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >
                   <h3>New Diagram</h3>
                 </button>
                 <RoomPopup />
+
                 <button
                   onClick={openLoginForm}
                   type="button"
-                  className="relative inline-flex items-center p-2 ml-2 text-gray-400 transition duration-200 rounded-md shadow h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
+                  className="relative inline-flex items-center p-2 text-gray-400 transition duration-200 rounded-md shadow h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >
                   <h3>Join a room</h3>
                 </button>
               </SearchbarContainer>
             </Searchbar>
-
-            <Utils>
-              <div className="flex">
-                <div className="ml-6 bg-gray-100 p-0.5 rounded-lg flex items-center sm:hidden">
-                  <button
-                    type="button"
-                    className="p-1.5 rounded-md text-gray-400 hover:bg-white hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-                  >
-                    <ViewListIcon className="w-5 h-5" aria-hidden="true" />
-                    <span className="sr-only">Use list view</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="ml-0.5 bg-white p-1.5 rounded-md shadow-sm text-gray-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-                  >
-                    <ViewGridIcon className="w-5 h-5" aria-hidden="true" />
-                    <span className="sr-only">Use grid view</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div className="mt-3 sm:mt-2">
-                {/* Mobile View Selector */}
-                <div className="sm:hidden">
-                  <Listbox value={selected} onChange={setSelected}>
-                    {({ open }) => (
-                      <>
-                        <Listbox.Label className="block text-sm font-medium text-gray-700">
-                          Assigned to
-                        </Listbox.Label>
-                        <div className="relative mt-1">
-                          <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-md shadow-sm cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <span className="block truncate">
-                              {selected.name}
-                            </span>
-                            <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                              <SelectorIcon
-                                className="w-5 h-5 text-gray-400"
-                                aria-hidden="true"
-                              />
-                            </span>
-                          </Listbox.Button>
-
-                          <Transition
-                            show={open}
-                            as={Fragment}
-                            leave="transition ease-in duration-100"
-                            leaveFrom="opacity-100"
-                            leaveTo="opacity-0"
-                          >
-                            <Listbox.Options
-                              static
-                              className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-                            >
-                              {views.map((person) => (
-                                <Listbox.Option
-                                  key={person.id}
-                                  className={({ active }) =>
-                                    classNames(
-                                      active
-                                        ? "text-white bg-indigo-600"
-                                        : "text-gray-900",
-                                      "cursor-default select-none relative py-2 pl-3 pr-9"
-                                    )
-                                  }
-                                  value={person}
-                                >
-                                  {({ selected, active }) => (
-                                    <>
-                                      <span
-                                        className={classNames(
-                                          selected
-                                            ? "font-semibold"
-                                            : "font-normal",
-                                          "block truncate"
-                                        )}
-                                      >
-                                        {person.name}
-                                      </span>
-
-                                      {selected ? (
-                                        <span
-                                          className={classNames(
-                                            active
-                                              ? "text-white"
-                                              : "text-indigo-600",
-                                            "absolute inset-y-0 right-0 flex items-center pr-4"
-                                          )}
-                                        >
-                                          <CheckIcon
-                                            className="w-5 h-5"
-                                            aria-hidden="true"
-                                          />
-                                        </span>
-                                      ) : null}
-                                    </>
-                                  )}
-                                </Listbox.Option>
-                              ))}
-                            </Listbox.Options>
-                          </Transition>
-                        </div>
-                      </>
-                    )}
-                  </Listbox>
-                </div>
-                {/* Desktop View Selector */}
-                <div className="hidden sm:block">
-                  <div className="flex items-center border-b border-gray-800">
-                    <nav
-                      className="flex flex-1 -mb-px space-x-6 xl:space-x-8"
-                      aria-label="Tabs"
-                    >
-                      {tabs.map((tab) => (
-                        <a
-                          key={tab.name}
-                          href={tab.href}
-                          aria-current={tab.current ? "page" : undefined}
-                          className={classNames(
-                            tab.current
-                              ? "border-gray-200 text-gray-200"
-                              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
-                            "whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
-                          )}
-                        >
-                          {tab.name}
-                        </a>
-                      ))}
-                    </nav>
-                    <div className="hidden ml-6 bg-secondary p-0.5 rounded-lg items-center sm:flex">
-                      <button
-                        type="button"
-                        onClick={() => setList(true)}
-                        className={`p-1.5 rounded-md hover:shadow-sm focus:outline-none ${
-                          List ? "bg-tertiary text-white" : "text-gray-400"
-                        }`}
-                      >
-                        <ViewListIcon className="w-5 h-5" aria-hidden="true" />
-                        <span className="sr-only">Use list view</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setList(false)}
-                        className={`p-1.5 rounded-md hover:shadow-sm focus:outline-none ${
-                          List ? "text-gray-400" : "bg-tertiary text-white"
-                        }`}
-                      >
-                        <ViewGridIcon className="w-5 h-5" aria-hidden="true" />
-                        <span className="sr-only">Use grid view</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Gallery */}
-              <section className="pb-16 mt-8" aria-labelledby="gallery-heading">
-                <h2 id="gallery-heading" className="sr-only">
-                  Recently viewed
-                </h2>
-
-                {/* Modify here too  */}
-                {/* {List && (
-                  <ul
-                    role="list"
-                    className="grid grid-cols-1 divide-y divide-gray-800 rounded-lg shadow-lg bg-secondary border-1 gap-x-4 gap-y-0"
-                  >
-                    {boards.map((board, index) => (
-                      <li key={board.id}>
-                        <a
-                          onClick={() => loadBoard(index)}
-                          href="#"
-                          className="block transition duration-200 hover:bg-gray-800"
-                        >
-                          <div className="px-4 py-4 sm:px-6">
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium text-gray-300 truncate">
-                                {board.title}
-                              </p>
-                              <div className="flex flex-shrink-0 ml-2">
-                                <p className="inline-flex px-2 text-xs font-semibold leading-5 text-green-800 bg-green-100 rounded-full">
-                                  Manual
-                                </p>
-                              </div>
-                            </div>
-                            <div className="mt-2 sm:flex sm:justify-between">
-                              <div className="sm:flex">
-                                <p className="flex items-center text-sm text-gray-500">
-                                  <UsersIcon
-                                    className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400"
-                                    aria-hidden="true"
-                                  />
-                                  Private
-                                </p>
-                              </div>
-                              <div className="flex items-center mt-2 text-sm text-gray-500 sm:mt-0">
-                                <CalendarIcon
-                                  className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400"
-                                  aria-hidden="true"
-                                />
-                                <p>
-                                  Created at{" "}
-                                  <time dateTime={board.closeDate}>
-                                    {dayjs(board.inserted_at).format(
-                                      "MMMM D, YYYY"
-                                    )}
-                                  </time>
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {!List && (
-                  <ul
-                    role="list"
-                    className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 sm:gap-x-6 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-2 xl:gap-x-8"
-                  >
-                    {boards.map((file, index) => (
-                      <li key={file.name} className="relative">
-                        <div
-                          onClick={() => loadBoard(index)}
-                          className={classNames(
-                            file.current
-                              ? "ring-2 ring-offset-2 ring-indigo-500"
-                              : "focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-gray-100 focus-within:ring-indigo-500",
-                            "group block w-full aspect-w-10 aspect-h-7 rounded-lg bg-gray-100 overflow-hidden"
-                          )}
-                        >
-                          <div className="w-full h-auto bg-white rounded-lg shadow-lg">
-                            <CanvasDraw
-                              hideInterface={true}
-                              hideGrid={true}
-                              canvasWidth="auto"
-                              canvasHeight={450}
-                              saveData={decomp(boards[index].board)}
-                              lazyRadius="0"
-                              className="pointer-events-none rounded-x"
-                            />
-                          </div>
-
-                          <button
-                            type="button"
-                            className="absolute inset-0 focus:outline-none"
-                          >
-                            <span className="sr-only">
-                              View details for {file.name}
-                            </span>
-                          </button>
-                        </div>
-                        <p className="block mt-2 text-sm font-medium text-gray-900 truncate pointer-events-none">
-                          {file.name}
-                        </p>
-                        <p className="block text-sm font-medium text-gray-500 pointer-events-none">
-                          {file.size}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                )} */}
-                {drawings.map((drawing) => (
-                  <button onClick={getDrawing}> {drawing.title} </button>
-                ))}
-              </section>
-            </Utils>
+            <div className="flex flex-row flex-wrap max-w-6xl  px-4 pt-8 mx-auto sm:px-6 lg:px-0">
+              {drawings.map((drawing) => (
+                <button onClick={getDrawing}> {drawing.title} </button>
+              ))}
+            </div>
           </div>
         </Main>
       </div>

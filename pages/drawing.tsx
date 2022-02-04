@@ -56,6 +56,7 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
+const getNodeId = () => `room_${+new Date()}`;
 // Drawing
 
 const Drawing = () => {
@@ -63,9 +64,7 @@ const Drawing = () => {
   const [color, setColor] = useState("#aabbcc");
   const [isDrawing, setIsDrawing] = useState(false);
   const userStatus = useAppSelector(uStatus);
-  const [socketUrl, setSocketUrl] = useState(
-    "ws://localhost:3003/ws/chat/someroom/"
-  );
+  const [socketUrl, setSocketUrl] = useState("ws://localhost:3003/ws/chat/");
   const [path, setPaths] = useState<CanvasPath[]>([]);
   const [title, setTitle] = useState("");
   const [svg, setSVG] = useState<string>("");
@@ -87,6 +86,16 @@ const Drawing = () => {
     [ReadyState.CLOSED]: "Closed",
     [ReadyState.UNINSTANTIATED]: "Uninstantiated",
   }[readyState];
+
+  useEffect(() => {
+    if (router.query.id) {
+      setSocketUrl("ws://localhost:3003/ws/chat/" + router.query.id + "/");
+      console.log(router.query.id);
+    } else {
+      setSocketUrl("ws://localhost:3003/ws/chat/" + getNodeId() + "/");
+    }
+  }, []);
+
   const logout = () => {
     dispatch(logoutUser());
   };
@@ -95,7 +104,6 @@ const Drawing = () => {
   };
   const onUpdate = (updatedPaths: CanvasPath[]): void => {
     setPaths(updatedPaths);
-    console.log("s");
   };
 
   // Saving Drawing
@@ -170,17 +178,6 @@ const Drawing = () => {
     }
   };
 
-  // Saving in form of a SVG
-  const svgExportHandler = async () => {
-    const exportSvg = canvasRef.current?.exportSvg;
-
-    if (exportSvg) {
-      const exportedDataURI = await exportSvg();
-      setSVG(exportedDataURI);
-      // SVG will be sent in a request to the backend to save it
-    }
-  };
-
   // Handling updates
   useEffect(() => {
     if (lastJsonMessage != null) {
@@ -190,10 +187,10 @@ const Drawing = () => {
     }
   }, [lastJsonMessage]);
 
-  // // Polling
-  // useInterval(() => {
-  //   sendJsonMessage(path);
-  // }, 5000);
+  // Polling
+  useInterval(() => {
+    sendJsonMessage(path);
+  }, 2000);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">
