@@ -65,7 +65,7 @@ export const drawingSlice = createSlice({
         }),
         builder.addCase(loadDrawings.fulfilled, (state,action) => {
             state.status = 'succeeded'
-            state.drawings = state.drawings.concat(action.payload)
+            state.drawings = action.payload
         }),
         builder.addCase(loadDrawings.rejected, (state,action) => {
             state.status = 'failed'

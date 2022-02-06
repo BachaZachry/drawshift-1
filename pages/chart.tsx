@@ -62,6 +62,7 @@ const Chart = () => {
   const [input, setInput] = useState("initialState");
   const [selected, setSelected] = useState("Input");
   const [color, setColor] = useState("#aabbcc");
+  const router = useRouter();
   const [elements, setElements] = useState([
     {
       id: "1",
@@ -92,8 +93,9 @@ const Chart = () => {
     { id: "e2-3", source: "2", target: "3", animated: true },
   ]);
   const [userData, setuserData] = useState();
-  const [roomId, setRoomId] = useState(getNodeId());
-  const [socketUrl, setSocketUrl] = useState("ws://localhost:3003/ws/chat/");
+  const [socketUrl, setSocketUrl] = useState(
+    "ws://localhost:3003/ws/chat/" + router.query.id + "/"
+  );
   const {
     sendMessage,
     sendJsonMessage,
@@ -108,7 +110,7 @@ const Chart = () => {
     [ReadyState.CLOSED]: "Closed",
     [ReadyState.UNINSTANTIATED]: "Uninstantiated",
   }[readyState];
-  const router = useRouter();
+
   const logout = () => {
     dispatch(logoutUser());
   };

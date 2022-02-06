@@ -59,23 +59,16 @@ import { RootState } from "lib/store";
 import { loadDrawings } from "lib/drawingSlice";
 import { RoomPopup } from "components/RoomPopup";
 
-const tabs = [{ name: "Boards", href: "#", current: true }];
-
 const views = [
   { id: 1, name: "Wade Cooper" },
   { id: 2, name: "Arlene Mccoy" },
   { id: 3, name: "Devon Webb" },
 ];
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
-}
 const getRoomId = () => `room_${+new Date()}`;
 
 const Dasboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selected, setSelected] = useState(views[1]);
-  const [List, setList] = useState(true);
   const usrname = useAppSelector(username);
   const error = useAppDispatch((state: RootState) => state.user.error);
   const dispatch = useAppDispatch();
