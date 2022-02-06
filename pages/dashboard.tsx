@@ -70,6 +70,7 @@ const views = [
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
+const getRoomId = () => `room_${+new Date()}`;
 
 const Dasboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -283,14 +284,24 @@ const Dasboard = () => {
                 </Search>
 
                 <button
-                  onClick={() => router.push("/drawing")}
+                  onClick={() =>
+                    router.push({
+                      pathname: "/drawing",
+                      query: { id: getRoomId() },
+                    })
+                  }
                   type="button"
                   className="relative inline-flex items-center p-2  my-2 text-gray-400 transition duration-200 rounded-md shadow h-11  bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >
                   <h3>New Drawing</h3>
                 </button>
                 <button
-                  onClick={() => router.push("/chart")}
+                  onClick={() =>
+                    router.push({
+                      pathname: "/chart",
+                      query: { id: getRoomId() },
+                    })
+                  }
                   type="button"
                   className="relative inline-flex items-center p-2  my-2 text-gray-400 transition duration-200 rounded-md shadow h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >

@@ -63,13 +63,14 @@ const getNodeId = () => `room_${+new Date()}`;
 const Drawing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [color, setColor] = useState("#aabbcc");
-  const [isDrawing, setIsDrawing] = useState(false);
   const userStatus = useAppSelector(uStatus);
-  const [roomId, setRoomId] = useState(getNodeId());
-  const [socketUrl, setSocketUrl] = useState("ws://localhost:3003/ws/chat/");
+  // const [roomId, setRoomId] = useState(getNodeId());
+  const router = useRouter();
+  const [socketUrl, setSocketUrl] = useState(
+    "ws://localhost:3003/ws/chat/" + router.query.id + "/"
+  );
   const [path, setPaths] = useState<CanvasPath[]>([]);
   const [title, setTitle] = useState("");
-  const [svg, setSVG] = useState<string>("");
   const {
     sendMessage,
     sendJsonMessage,
@@ -78,7 +79,7 @@ const Drawing = () => {
     readyState,
   } = useWebSocket(socketUrl);
   const dispatch = useAppDispatch();
-  const router = useRouter();
+
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const connectionStatus = {
@@ -89,14 +90,14 @@ const Drawing = () => {
     [ReadyState.UNINSTANTIATED]: "Uninstantiated",
   }[readyState];
 
-  useEffect(() => {
-    if (router.query.id) {
-      setSocketUrl("ws://localhost:3003/ws/chat/" + router.query.id + "/");
-      console.log(router.query.id);
-    } else {
-      setSocketUrl("ws://localhost:3003/ws/chat/" + roomId + "/");
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (router.query.id) {
+  //     setSocketUrl("ws://localhost:3003/ws/chat/" + router.query.id + "/");
+  //     console.log(router.query.id);
+  //   } else {
+  //     setSocketUrl("ws://localhost:3003/ws/chat/" + roomId + "/");
+  //   }
+  // }, []);
 
   const logout = () => {
     dispatch(logoutUser());
