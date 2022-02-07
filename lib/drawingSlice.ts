@@ -44,6 +44,15 @@ export const postDrawing = createAsyncThunk('drawing/postDrawing', async(draw: D
          return rejectWithValue(err.response.data);
     }
  })
+ export const loadAdrawing = createAsyncThunk('drawing/loadAdrawing', async(id, {rejectWithValue}) => {
+    try{
+         const response = await api.get(`boards/drawing/${id}`);
+         return response.data
+    }
+    catch(err) {
+         return rejectWithValue(err.response.data);
+    }
+ })
 
 export const drawingSlice = createSlice({
     name:'drawing',
@@ -71,9 +80,20 @@ export const drawingSlice = createSlice({
         builder.addCase(loadDrawings.rejected, (state,action) => {
             state.status = 'failed'
             state.error = action.payload
+        }),
+        builder.addCase(loadAdrawing.pending, (state,action) => {
+            state.status = 'loading'
+        }),
+        builder.addCase(loadAdrawing.fulfilled, (state,action) => {
+            state.status = 'succeeded'
+            state.drawings = action.payload
+        }),
+        builder.addCase(loadAdrawing.rejected, (state,action) => {
+            state.status = 'failed'
+            state.error = action.payload
         })
     }
 })
 
-
+export const drawingStatus = (state:RootState) => state.drawing.status;
 export default drawingSlice.reducer

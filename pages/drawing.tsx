@@ -41,7 +41,7 @@ import useInterval from "lib/useInterval";
 import { useAppDispatch, useAppSelector } from "lib/hooks";
 import { loadUser, logoutUser, uStatus } from "lib/userSlice";
 import { useRouter } from "next/router";
-import { postDrawing } from "lib/drawingSlice";
+import { loadAdrawing, postDrawing, drawingStatus } from "lib/drawingSlice";
 
 const sidebarNavigation = [
   { name: "Open", href: "#", icon: InboxIcon, current: true },
@@ -79,6 +79,8 @@ const Drawing = () => {
     readyState,
   } = useWebSocket(socketUrl);
   const dispatch = useAppDispatch();
+  const drawings = useAppSelector((state: RootState) => state.drawing.drawings);
+  const drStatus = useAppSelector(drawingStatus);
 
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -118,13 +120,6 @@ const Drawing = () => {
       router.push("/");
     }
   }, [userStatus]);
-
-  // Load selected drawing if there is
-  useEffect(() => {
-    if (router.query.dr_id) {
-      loadPath(router.query.dr_path);
-    }
-  }, []);
 
   const canvasRef = useRef<ReactSketchCanvas>(null);
 
@@ -189,6 +184,21 @@ const Drawing = () => {
       loadPath(lastJsonMessage["message"]);
     }
   }, [lastJsonMessage]);
+
+  useEffect(() => {
+    if (router.query.dr_id) {
+      dispatch(loadAdrawing(router.query.dr_id));
+      console.log(drawings.path);
+    }
+  }, []);
+  useEffect(() => {
+    if (drStatus == "succeeded") {
+      if (drawings.path) {
+        console.log(drawings.path);
+        loadPath(drawings.path);
+      }
+    }
+  }, [drStatus]);
 
   // // Polling
   // useInterval(() => {

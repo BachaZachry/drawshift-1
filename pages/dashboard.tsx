@@ -320,6 +320,7 @@ const Dasboard = () => {
                       query: { id: getRoomId(), dr_id: drawing.id },
                     })
                   }
+                  key={drawing.id}
                 >
                   <img
                     src={drawing.base64_image}
