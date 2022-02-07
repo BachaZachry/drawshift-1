@@ -200,10 +200,10 @@ const Drawing = () => {
     }
   }, [drStatus]);
 
-  // // Polling
-  // useInterval(() => {
-  //   sendJsonMessage(path);
-  // }, 2000);
+  // Polling
+  useInterval(() => {
+    sendJsonMessage(path);
+  }, 1000);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">
