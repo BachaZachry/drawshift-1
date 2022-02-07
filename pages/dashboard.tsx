@@ -81,7 +81,7 @@ const Dasboard = () => {
   const logout = () => {
     dispatch(logoutUser());
   };
-  const getDrawing = () => {};
+
   // If a token is available,check if it's valid
   useEffect(() => {
     if (userStatus == "idle") {
@@ -313,7 +313,20 @@ const Dasboard = () => {
             </Searchbar>
             <div className="flex flex-row flex-wrap max-w-6xl  px-4 pt-8 mx-auto sm:px-6 lg:px-0">
               {drawings.map((drawing) => (
-                <button onClick={getDrawing}> {drawing.title} </button>
+                <button
+                  onClick={() =>
+                    router.push({
+                      pathname: "/drawing",
+                      query: { id: getRoomId(), dr_id: drawing.id },
+                    })
+                  }
+                >
+                  <img
+                    src={drawing.base64_image}
+                    alt={drawing.title}
+                    className="object-cover w-80 h-48 rounded mx-2 my-2"
+                  />
+                </button>
               ))}
             </div>
           </div>

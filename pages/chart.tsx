@@ -13,6 +13,7 @@ import {
 import {
   ReplyIcon,
   SaveAsIcon,
+  PlusCircleIcon,
   TrashIcon,
   CheckIcon,
   SelectorIcon,
@@ -61,6 +62,7 @@ const Chart = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [input, setInput] = useState("initialState");
   const [selected, setSelected] = useState("Input");
+  const [title, setTitle] = useState("");
   const [color, setColor] = useState("#aabbcc");
   const router = useRouter();
   const [elements, setElements] = useState([
@@ -114,6 +116,13 @@ const Chart = () => {
   const logout = () => {
     dispatch(logoutUser());
   };
+  const changeTitle = (e) => {
+    setTitle(e.target.value);
+  };
+  const onSubmit = (e) => {
+    e.preventDefault();
+    // dispatch(postDrawing({ title, path }));
+  };
 
   const onUpdateGraph = (e, n) => {
     setElements((els) =>
@@ -160,14 +169,6 @@ const Chart = () => {
     a.push({ typeofoperation: "add" });
     sendJsonMessage(a);
   }, [setElements]);
-  useEffect(() => {
-    if (router.query.id) {
-      setSocketUrl("ws://localhost:3003/ws/chat/" + router.query.id + "/");
-      console.log(router.query.id);
-    } else {
-      setSocketUrl("ws://localhost:3003/ws/chat/" + roomId + "/");
-    }
-  }, []);
   // Adding edge
   const onConnect = (params) => {
     setElements((els) => addEdge(params, els));
@@ -350,19 +351,47 @@ const Chart = () => {
         <Main>
           {/* Page header */}
           <div className="flex flex-col items-center justify-between mx-auto mt-2 md:flex-row max-w-7xl">
-            <div className="flex-1 min-w-0">
-              <nav className="flex" aria-label="Breadcrumb"></nav>
+            <nav className="flex" aria-label="Breadcrumb"></nav>
+            <form className="flex flex-grow" onSubmit={onSubmit}>
               <input
-                className="flex-grow px-4 py-2 text-sm font-medium text-gray-700 transition duration-200 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                placeholder="Board 01"
+                className="inline-flex px-4 py-2 my-1 text-sm font-medium text-gray-700 transition duration-200 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                placeholder="Title"
+                value={title}
+                onChange={changeTitle}
+                required
               />
-            </div>
-            <div className="flex mt-5 lg:mt-0 lg:ml-4">
-              <span className="">
+              <span className="ml-3">
                 <button
-                  onClick={() => saveableCanvas.undo()}
+                  type="submit"
+                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <SaveAsIcon
+                    className="w-5 h-5 mr-2 -ml-1"
+                    aria-hidden="true"
+                  />
+                  Save
+                </button>
+              </span>
+            </form>
+            <div className="flex flex-wrap justify-start mt-5 lg:mt-0 lg:ml-4">
+              <span className="ml-3">
+                <button
+                  onClick={addNode}
                   type="button"
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <PlusCircleIcon
+                    className="w-5 h-5 mr-2 -ml-1 text-gray-500"
+                    aria-hidden="true"
+                  />
+                  Add Node
+                </button>
+              </span>
+              <span className="ml-3">
+                <button
+                  onClick={() => console.log("undo")}
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   <ReplyIcon
                     className="w-5 h-5 mr-2 -ml-1 text-gray-500"
@@ -374,9 +403,9 @@ const Chart = () => {
 
               <span className="ml-3">
                 <button
-                  onClick={() => saveableCanvas.clear()}
+                  onClick={() => console.log("clear")}
                   type="button"
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   <TrashIcon
                     className="w-5 h-5 mr-2 -ml-1 text-gray-500"
@@ -385,26 +414,11 @@ const Chart = () => {
                   Clear
                 </button>
               </span>
-
-              <span className="ml-3">
-                <button
-                  onClick={() => saveBoard()}
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <SaveAsIcon
-                    className="w-5 h-5 mr-2 -ml-1"
-                    aria-hidden="true"
-                  />
-                  Save
-                </button>
-              </span>
-
               {/* Dropdown */}
             </div>
           </div>
           <div className="flex flex-row h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl">
-            <div className="w-2/3 h-[600px]">
+            <div className="w-full h-[600px]">
               <ReactFlow
                 elements={elements}
                 onNodeDragStop={onUpdateGraph}
@@ -431,103 +445,11 @@ const Chart = () => {
                 <Background color="#aaa" gap={16} />
               </ReactFlow>
             </div>
-            <div className="w-1/3 flex flex-col py-20 px-12 space-y-4 bg-gray-800 rounded-r-lg h-[600px]">
-              <div className="flex flex-col">
-                <div className="block mb-4 text-sm font-medium text-gray-200">
-                  Node Content
-                </div>
-                <input
-                  className="p-2 text-sm border border-gray-100 shadow-xl"
-                  placeholder="Type your node text"
-                />
-              </div>
-
-              <Listbox value={selected} onChange={setSelected}>
-                {({ open }) => (
-                  <>
-                    <Listbox.Label className="block text-sm font-medium text-gray-200">
-                      Type
-                    </Listbox.Label>
-                    <div className="relative mt-1">
-                      <Listbox.Button className="relative w-full py-2 pl-3 pr-10 text-left bg-white border border-gray-300 rounded-md shadow-sm cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <span className="block truncate">{selected}</span>
-                        <span className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                          <SelectorIcon
-                            className="w-5 h-5 text-gray-400"
-                            aria-hidden="true"
-                          />
-                        </span>
-                      </Listbox.Button>
-
-                      <Transition
-                        show={open}
-                        as={Fragment}
-                        leave="transition ease-in duration-100"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
-                      >
-                        <Listbox.Options
-                          static
-                          className="absolute z-10 w-full py-1 mt-1 overflow-auto text-base bg-white rounded-md shadow-lg max-h-60 ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-                        >
-                          {people.map((person) => (
-                            <Listbox.Option
-                              key={person.id}
-                              className={({ active }) =>
-                                classNames(
-                                  active
-                                    ? "text-white bg-indigo-600"
-                                    : "text-gray-900",
-                                  "cursor-default select-none relative py-2 pl-3 pr-9"
-                                )
-                              }
-                              value={person}
-                            >
-                              {({ selected, active }) => (
-                                <>
-                                  <span
-                                    className={classNames(
-                                      selected
-                                        ? "font-semibold"
-                                        : "font-normal",
-                                      "block truncate"
-                                    )}
-                                  >
-                                    {person}
-                                  </span>
-
-                                  {selected ? (
-                                    <span
-                                      className={classNames(
-                                        active
-                                          ? "text-white"
-                                          : "text-indigo-600",
-                                        "absolute inset-y-0 right-0 flex items-center pr-4"
-                                      )}
-                                    >
-                                      <CheckIcon
-                                        className="w-5 h-5"
-                                        aria-hidden="true"
-                                      />
-                                    </span>
-                                  ) : null}
-                                </>
-                              )}
-                            </Listbox.Option>
-                          ))}
-                        </Listbox.Options>
-                      </Transition>
-                    </div>
-                  </>
-                )}
-              </Listbox>
-              <div className="flex flex-col items-center pt-12">
-                <HexColorPicker color={color} onChange={setColor} />
-              </div>
-            </div>
           </div>
           {/* <span>The WebSocket is currently {connectionStatus}</span> */}
-          <button onClick={addNode}>Add node</button>
+          <div className="flex flex-col items-center pt-12">
+            <HexColorPicker color={color} onChange={setColor} />
+          </div>
         </Main>
       </div>
     </div>

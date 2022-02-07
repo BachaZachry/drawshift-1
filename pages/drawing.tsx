@@ -90,15 +90,6 @@ const Drawing = () => {
     [ReadyState.UNINSTANTIATED]: "Uninstantiated",
   }[readyState];
 
-  // useEffect(() => {
-  //   if (router.query.id) {
-  //     setSocketUrl("ws://localhost:3003/ws/chat/" + router.query.id + "/");
-  //     console.log(router.query.id);
-  //   } else {
-  //     setSocketUrl("ws://localhost:3003/ws/chat/" + roomId + "/");
-  //   }
-  // }, []);
-
   const logout = () => {
     dispatch(logoutUser());
   };
@@ -112,7 +103,9 @@ const Drawing = () => {
   // Saving Drawing
   const onSubmit = (e) => {
     e.preventDefault();
-    dispatch(postDrawing({ title, path }));
+    canvasRef.current?.exportImage("jpeg").then((base64_image) => {
+      dispatch(postDrawing({ title, path, base64_image }));
+    });
   };
 
   // If a token is available,check if it's valid
@@ -125,6 +118,13 @@ const Drawing = () => {
       router.push("/");
     }
   }, [userStatus]);
+
+  // Load selected drawing if there is
+  useEffect(() => {
+    if (router.query.dr_id) {
+      loadPath(router.query.dr_path);
+    }
+  }, []);
 
   const canvasRef = useRef<ReactSketchCanvas>(null);
 
@@ -190,10 +190,10 @@ const Drawing = () => {
     }
   }, [lastJsonMessage]);
 
-  // Polling
-  useInterval(() => {
-    sendJsonMessage(path);
-  }, 2000);
+  // // Polling
+  // useInterval(() => {
+  //   sendJsonMessage(path);
+  // }, 2000);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">

@@ -10,7 +10,8 @@ export interface DrawingState {
 
 export interface DrawType {
     title: string,
-    path: any
+    path: any,
+    base64_image: string,
 }
 
 const initialState: DrawingState = {
@@ -24,6 +25,7 @@ export const postDrawing = createAsyncThunk('drawing/postDrawing', async(draw: D
          const response = await api.post('boards/drawing/', {
              title:draw.title,
              path:draw.path,
+             base64_image:draw.base64_image
          });
          console.log(response)
          return response.data
@@ -36,7 +38,6 @@ export const postDrawing = createAsyncThunk('drawing/postDrawing', async(draw: D
  export const loadDrawings = createAsyncThunk('drawing/loadDrawings', async(obj, {rejectWithValue}) => {
     try{
          const response = await api.get('boards/drawing/');
-         console.log(response.data[0])
          return response.data
     }
     catch(err) {
