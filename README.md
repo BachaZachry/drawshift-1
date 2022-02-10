@@ -9,6 +9,7 @@ Drawshift is a platform that enable its users to draw or make diagrams with othe
 - **Django Rest Framework**
 - **Next.js**
 - **Django Channels**
+- **Redux-Toolkit**
 - **Tailwind**
 - **PostgreSQL**
 - **Redis**
