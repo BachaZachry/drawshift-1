@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Dialog, Transition, Listbox } from "@headlessui/react";
+import { Dialog, Transition, Listbox } from '@headlessui/react';
 import {
   ArchiveIcon,
   BanIcon,
@@ -9,7 +9,7 @@ import {
   PencilAltIcon,
   UserCircleIcon,
   XIcon,
-} from "@heroicons/react/outline";
+} from '@heroicons/react/outline';
 import {
   ReplyIcon,
   SaveAsIcon,
@@ -21,8 +21,8 @@ import {
   XCircleIcon,
   DownloadIcon,
   DuplicateIcon,
-} from "@heroicons/react/solid";
-import Head from "next/head";
+} from '@heroicons/react/solid';
+import Head from 'next/head';
 import React, {
   Fragment,
   useCallback,
@@ -30,31 +30,31 @@ import React, {
   useState,
   useRef,
   createElement,
-} from "react";
-import "react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css";
-import useWebSocket, { ReadyState } from "react-use-websocket";
-import { Main } from "../components/styled/board.styled";
-import { HexColorPicker } from "react-colorful";
+} from 'react';
+import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
+import { Main } from '../components/styled/board.styled';
+import { HexColorPicker } from 'react-colorful';
 // Drawing
-import { ReactSketchCanvas } from "react-sketch-canvas";
-import useInterval from "lib/useInterval";
-import { useAppDispatch, useAppSelector } from "lib/hooks";
-import { loadUser, logoutUser, uStatus } from "lib/userSlice";
-import { useRouter } from "next/router";
-import { loadAdrawing, postDrawing, drawingStatus } from "lib/drawingSlice";
+import { ReactSketchCanvas } from 'react-sketch-canvas';
+import useInterval from 'lib/useInterval';
+import { useAppDispatch, useAppSelector } from 'lib/hooks';
+import { loadUser, logoutUser, uStatus } from 'lib/userSlice';
+import { useRouter } from 'next/router';
+import { loadAdrawing, postDrawing, drawingStatus } from 'lib/drawingSlice';
 
 const sidebarNavigation = [
-  { name: "Open", href: "#", icon: InboxIcon, current: true },
+  { name: 'Open', href: '#', icon: InboxIcon, current: true },
   {
-    name: "Your Profile",
-    href: "/dashboard",
+    name: 'Your Profile',
+    href: '/dashboard',
     icon: UserCircleIcon,
     current: false,
   },
 ];
 
 function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
 const getNodeId = () => `room_${+new Date()}`;
@@ -62,34 +62,34 @@ const getNodeId = () => `room_${+new Date()}`;
 
 const Drawing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [color, setColor] = useState("#aabbcc");
+  const [color, setColor] = useState('#aabbcc');
   const userStatus = useAppSelector(uStatus);
-  // const [roomId, setRoomId] = useState(getNodeId());
+  const [roomId, setRoomId] = useState(getNodeId());
   const router = useRouter();
   const [socketUrl, setSocketUrl] = useState(
-    "ws://localhost:3003/ws/chat/" + router.query.id + "/"
+    'ws://localhost:8000/ws/chat/' + 'room_1718731252411' + '/'
   );
-  const [path, setPaths] = useState<CanvasPath[]>([]);
-  const [title, setTitle] = useState("");
+  const [path, setPaths] = useState([]);
+  const canvasDataRef = useRef([]);
+  const canvasRef = useRef(null);
+  const [title, setTitle] = useState('');
   const {
     sendMessage,
     sendJsonMessage,
     lastMessage,
     lastJsonMessage,
     readyState,
-  } = useWebSocket(socketUrl);
+  } = useWebSocket(socketUrl, {});
   const dispatch = useAppDispatch();
   const drawings = useAppSelector((state: RootState) => state.drawing.drawings);
   const drStatus = useAppSelector(drawingStatus);
 
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const connectionStatus = {
-    [ReadyState.CONNECTING]: "Connecting",
-    [ReadyState.OPEN]: "Open",
-    [ReadyState.CLOSING]: "Closing",
-    [ReadyState.CLOSED]: "Closed",
-    [ReadyState.UNINSTANTIATED]: "Uninstantiated",
+    [ReadyState.CONNECTING]: 'Connecting',
+    [ReadyState.OPEN]: 'Open',
+    [ReadyState.CLOSING]: 'Closing',
+    [ReadyState.CLOSED]: 'Closed',
+    [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
   }[readyState];
 
   const logout = () => {
@@ -105,23 +105,21 @@ const Drawing = () => {
   // Saving Drawing
   const onSubmit = (e) => {
     e.preventDefault();
-    canvasRef.current?.exportImage("jpeg").then((base64_image) => {
+    canvasRef.current?.exportImage('jpeg').then((base64_image) => {
       dispatch(postDrawing({ title, path, base64_image }));
     });
   };
 
   // If a token is available,check if it's valid
   useEffect(() => {
-    if (userStatus == "idle") {
+    if (userStatus == 'idle') {
       dispatch(loadUser());
     }
     // Redirect to the landing page if the token is invalid
-    else if (userStatus == "failed") {
-      router.push("/");
+    else if (userStatus == 'failed') {
+      router.push('/');
     }
   }, [userStatus]);
-
-  const canvasRef = useRef<ReactSketchCanvas>(null);
 
   // Handlers
   const undoHandler = () => {
@@ -158,52 +156,79 @@ const Drawing = () => {
       eraseMode(true);
     }
   };
+
   const exportImage = () => {
-    canvasRef.current?.exportImage("jpeg").then((res) => {
-      let a = document.createElement("a");
+    canvasRef.current?.exportImage('jpeg').then((res) => {
+      let a = document.createElement('a');
       a.href = res;
-      a.download = "Image.jpeg";
+      a.download = 'Image.jpeg';
       a.click();
       a.remove();
     });
   };
-  // Load unto the canvas
-  const loadPath = (canvasPath: CanvasPath[]) => {
-    const load = canvasRef.current?.loadPaths;
-    if (load) {
-      load(canvasPath);
-      console.log("loaded");
-    }
-  };
 
-  // Handling updates
-  useEffect(() => {
-    if (lastJsonMessage != null) {
-      console.log(lastJsonMessage["message"]);
-      onUpdate(lastJsonMessage["message"]);
-      loadPath(lastJsonMessage["message"]);
-    }
-  }, [lastJsonMessage]);
+  const handleCanvasUpdate = useCallback(
+    (data) => {
+      sendMessage(JSON.stringify({ type: 'canvas_update', canvas_data: data }));
+    },
+    [sendMessage]
+  );
 
-  useEffect(() => {
-    if (router.query.dr_id) {
-      dispatch(loadAdrawing(router.query.dr_id));
-      console.log(drawings.path);
-    }
+  const drawOnCanvas = useCallback((ctx, canvasData) => {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    canvasData.forEach((path) => {
+      ctx.beginPath();
+      path.forEach((point, index) => {
+        if (index === 0) {
+          ctx.moveTo(point.x, point.y);
+        } else {
+          ctx.lineTo(point.x, point.y);
+        }
+      });
+      ctx.stroke();
+    });
   }, []);
+
   useEffect(() => {
-    if (drStatus == "succeeded") {
-      if (drawings.path) {
-        console.log(drawings.path);
-        loadPath(drawings.path);
+    if (lastMessage !== null) {
+      const { type, canvas_data } = JSON.parse(lastMessage.data);
+      if (type === 'canvas_update') {
+        canvasDataRef.current = canvas_data;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        drawOnCanvas(ctx, canvas_data);
       }
     }
-  }, [drStatus]);
+  }, [lastMessage, drawOnCanvas]);
 
-  // Polling
-  useInterval(() => {
-    sendJsonMessage(path);
-  }, 1000);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const handleCanvasMouseDown = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      canvasDataRef.current.push([{ x, y }]);
+      handleCanvasUpdate(canvasDataRef.current);
+    };
+    const handleCanvasMouseMove = (e) => {
+      if (e.buttons !== 1) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const currentPath =
+        canvasDataRef.current[canvasDataRef.current.length - 1];
+      currentPath.push({ x, y });
+      drawOnCanvas(ctx, canvasDataRef.current);
+      handleCanvasUpdate(canvasDataRef.current);
+    };
+    canvas.addEventListener('mousedown', handleCanvasMouseDown);
+    canvas.addEventListener('mousemove', handleCanvasMouseMove);
+    return () => {
+      canvas.removeEventListener('mousedown', handleCanvasMouseDown);
+      canvas.removeEventListener('mousemove', handleCanvasMouseMove);
+    };
+  }, [handleCanvasUpdate, drawOnCanvas]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">
@@ -331,9 +356,9 @@ const Drawing = () => {
                 href={item.href}
                 className={classNames(
                   item.current
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-400 hover:bg-gray-700",
-                  "flex-shrink-0 inline-flex items-center justify-center h-14 w-14 rounded-lg"
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-400 hover:bg-gray-700',
+                  'flex-shrink-0 inline-flex items-center justify-center h-14 w-14 rounded-lg'
                 )}
               >
                 <span className="sr-only">{item.name}</span>
@@ -465,7 +490,7 @@ const Drawing = () => {
             </div>
           </div>
           <div className="h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl">
-            <ReactSketchCanvas
+            {/* <ReactSketchCanvas
               className="rounded-xl"
               ref={canvasRef}
               width="auto"
@@ -474,7 +499,8 @@ const Drawing = () => {
               strokeColor={color}
               allowOnlyPointerType="all"
               onUpdate={onUpdate}
-            />
+            /> */}
+            <canvas ref={canvasRef} width={800} height={600} />
           </div>
           <div className="flex flex-wrap justify-center mt-5 lg:mt-0 lg:ml-4">
             <HexColorPicker color={color} onChange={setColor} />

@@ -1,11 +1,11 @@
-import { Dialog, Transition } from "@headlessui/react";
-import { LoginIcon, XIcon } from "@heroicons/react/solid";
-import { Fragment, useRef, useState } from "react";
-import GoogleLogin from "react-google-login";
-import { useRouter } from "next/router";
-import { useAppDispatch, useAppSelector } from "lib/hooks";
-import { googleUserLogin } from "lib/userSlice";
-import { uiLoginState, open, close } from "lib/uiLoginSlice";
+import { Dialog, Transition } from '@headlessui/react';
+import { LoginIcon, XIcon } from '@heroicons/react/solid';
+import { Fragment, useRef, useState } from 'react';
+import GoogleLogin from 'react-google-login';
+import { useRouter } from 'next/router';
+import { useAppDispatch, useAppSelector } from 'lib/hooks';
+import { googleUserLogin } from 'lib/userSlice';
+import { uiLoginState, open, close } from 'lib/uiLoginSlice';
 
 export const AuthPopup = () => {
   const cancelButtonRef = useRef();
@@ -19,7 +19,7 @@ export const AuthPopup = () => {
 
   async function responseGoogle(response) {
     await dispatch(googleUserLogin(response.accessToken));
-    router.push("/dashboard");
+    router.push('/dashboard');
   }
 
   return (
