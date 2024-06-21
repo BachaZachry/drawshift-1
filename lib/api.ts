@@ -1,19 +1,23 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
+import { useGlobalStore } from './useGlobalStore';
 
 let baseURL = 'http://localhost:8000/';
-
-export const getToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
-  }
-  return null;
-};
 
 export const api = axios.create({
   baseURL: baseURL,
   headers: {
-    Authorization: getToken() ? `Token ${getToken()}` : null,
     'Content-Type': 'application/json',
     accept: 'application/json',
   },
+});
+
+api.interceptors.request.use((config: AxiosRequestConfig) => {
+  const token = useGlobalStore.getState().token;
+
+  config.headers = config.headers ?? {};
+
+  if (token) {
+    config.headers['Authorization'] = `Token ${token}`;
+  }
+  return config;
 });
