@@ -1,6 +1,5 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useGlobalStore } from 'lib/useGlobalStore';
-import { useQuery } from 'react-query';
 
 interface SignUpCredentials {
   username: string;

@@ -131,6 +131,40 @@ const createSlice: StateCreator<State & Actions> = (set, get) => ({
       throw new Error(err);
     }
   },
+  addDrawing: async (title, path, base64_image) => {
+    try {
+      const response = await api.post('boards/drawing/', {
+        title,
+        path,
+        base64_image,
+      });
+
+      return response.data;
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  },
+  retrieveDrawings: async () => {
+    try {
+      const response = await api.get('boards/drawing/');
+
+      return response.data;
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  },
+  retrieveSingleDrawing: async (id) => {
+    try {
+      const response = await api.post(`boards/drawing/${id}/`);
+
+      return response.data.drawing;
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  },
 });
 
 const useStoreBase = create<State & Actions>()(
