@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useGlobalStore } from 'lib/useGlobalStore';
+import { useRouter } from 'next/router';
 
 interface SignUpCredentials {
   username: string;
@@ -18,7 +19,9 @@ const useAuth = () => {
   const signIn = useGlobalStore((state) => state.signIn);
   const setUser = useGlobalStore((state) => state.setUser);
   const googleAuth = useGlobalStore((state) => state.googleAuth);
+  const signOut = useGlobalStore((state) => state.signOut);
   const user = useGlobalStore((state) => state.user);
+  const router = useRouter();
 
   const signUpMutation = useMutation({
     mutationFn: (credentials: SignUpCredentials) =>
@@ -49,6 +52,7 @@ const useAuth = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
+      router.push('/dashboard');
     },
   });
 
@@ -58,11 +62,20 @@ const useAuth = () => {
     enabled: !!user,
   });
 
+  const signOutMutation = useMutation({
+    mutationFn: () => signOut(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user', 'drawings'] });
+      router.push('/');
+    },
+  });
+
   return {
     signUpMutation,
     signInMutation,
     googleAuthMutation,
     setUserQuery,
+    signOutMutation,
   };
 };
 

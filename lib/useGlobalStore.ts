@@ -33,8 +33,8 @@ interface Actions {
     password: string
   ) => Promise<{ data: any }>;
   signIn: (email: string, password: string) => Promise<{ data: any }>;
-  signOut: () => void;
-  setUser: () => void;
+  signOut: () => Promise<{ error: any }>;
+  setUser: () => Promise<{ data: any }>;
   setAuthModalOpen: (open: boolean) => void;
   // updatePassword: (password: string) => Promise<{ error: any }>;
   reset: () => void;
@@ -54,6 +54,7 @@ const createSlice: StateCreator<State & Actions> = (set, get) => ({
   token: null,
   signUp: async (username, email, password) => {
     try {
+      set({ token: null });
       const response = await api.post('users/register/', {
         username,
         email,
@@ -72,6 +73,7 @@ const createSlice: StateCreator<State & Actions> = (set, get) => ({
   },
   signIn: async (username, password) => {
     try {
+      set({ token: null });
       const response = await api.post('users/login/', {
         username,
         password,
@@ -90,12 +92,9 @@ const createSlice: StateCreator<State & Actions> = (set, get) => ({
   signOut: async () => {
     try {
       await api.post('users/logout/');
-      localStorage.removeItem('token');
-      api.defaults.headers['Authorization'] = null;
-      set({
-        user: null,
-        token: null,
-      });
+
+      get().reset();
+      return null;
     } catch (err) {
       console.error(err);
       throw new Error(err);
@@ -105,21 +104,24 @@ const createSlice: StateCreator<State & Actions> = (set, get) => ({
     try {
       const response = await api.get('users/load-user/');
       set({ user: response.data });
+
+      return response.data;
     } catch (err) {
-      localStorage.removeItem('token');
-      api.defaults.headers['Authorization'] = null;
+      get().reset();
       console.error(err);
       throw new Error(err);
     }
   },
   setAuthModalOpen: (open) => set(() => ({ authModalOpen: open })),
   // updatePassword: async () => {},
-  reset: () => set({ user: null, authModalOpen: false, token: null }),
+  reset: () => set({ user: null, authModalOpen: false }),
   googleAuth: async (accessToken) => {
     try {
+      set({ token: null });
       const response = await api.post('users/rest-auth/google/', {
-        accessToken,
+        access_token: accessToken,
       });
+
       set({
         user: response.data.user,
         token: response.data.token,
