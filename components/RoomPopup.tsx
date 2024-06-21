@@ -1,34 +1,28 @@
-import { Dialog, Transition } from "@headlessui/react";
-import { LoginIcon, XIcon } from "@heroicons/react/solid";
-import { Fragment, useRef, useState } from "react";
-import { useRouter } from "next/router";
-import { useAppDispatch, useAppSelector } from "lib/hooks";
-import { uiLoginState, open, close } from "lib/uiLoginSlice";
+import { Dialog, Transition } from '@headlessui/react';
+import { XIcon } from '@heroicons/react/solid';
+import { Fragment, useRef, useState } from 'react';
+import { useRouter } from 'next/router';
 
 export const RoomPopup = () => {
   const cancelButtonRef = useRef();
-  const dispatch = useAppDispatch();
   const router = useRouter();
-  const loginForm = useAppSelector(uiLoginState);
-  const [room, setRoom] = useState("");
+  const [room, setRoom] = useState('');
+  const [roomPopup, setRoomPopup] = useState(false);
 
-  const closeModal = () => {
-    dispatch(close());
-  };
   const openDrawingRoom = (e) => {
     e.preventDefault();
-    router.push({ pathname: "/drawing", query: { id: room } });
+    router.push({ pathname: '/drawing', query: { id: room } });
   };
   const openChartingRoom = (e) => {
     e.preventDefault();
-    router.push({ pathname: "/chart", query: { id: room } });
+    router.push({ pathname: '/chart', query: { id: room } });
   };
   const changeRoom = (e) => {
     setRoom(e.target.value);
   };
   return (
     <Transition
-      show={loginForm}
+      show={roomPopup}
       //@ts-ignore
       as={Fragment}
       enter="transition-opacity duration-300 ease-out"
@@ -39,17 +33,20 @@ export const RoomPopup = () => {
       leaveTo="opacity-0"
     >
       <Dialog
-        open={loginForm}
+        open={roomPopup}
         initialFocus={cancelButtonRef}
         static
-        onClose={closeModal}
+        onClose={() => setRoomPopup(false)}
         className="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto font-monst"
       >
         <Dialog.Overlay className="fixed inset-0 bg-black opacity-50" />
 
         <div className="z-20 flex flex-col bg-white rounded-lg opacity-100">
           <div className="flex justify-end pt-3 pr-3">
-            <button className="focus:outline-none" onClick={() => closeModal()}>
+            <button
+              className="focus:outline-none"
+              onClick={() => setRoomPopup(false)}
+            >
               <XIcon className="w-5 h-5 text-green-400" aria-hidden="true" />
             </button>
           </div>
