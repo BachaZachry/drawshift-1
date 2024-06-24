@@ -104,16 +104,21 @@ const Drawing = () => {
 
   // Handlers
   const undoHandler = () => {
-    if (currentStep > 0) {
-      setCurrentStep((prevStep) => prevStep - 1);
-      canvasDataRef.current = history[currentStep - 1];
+    if (currentStep >= 0) {
+      const newStep = currentStep - 1;
+      setCurrentStep(newStep);
+
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
+
+      if (newStep === -1) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvasDataRef.current = [];
+      } else {
+        canvasDataRef.current = history[newStep];
+      }
       drawOnCanvas(ctx, canvasDataRef.current);
       handleCanvasUpdate(canvasDataRef.current);
-    } else {
-      console.log('hey');
-      console.log(currentStep);
     }
   };
 
