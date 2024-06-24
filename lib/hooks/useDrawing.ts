@@ -11,27 +11,21 @@ const useDrawing = () => {
   const queryClient = useQueryClient();
   const addDrawing = useGlobalStore((state) => state.addDrawing);
   const retrieveDrawings = useGlobalStore((state) => state.retrieveDrawings);
-  const retrieveSingleDrawing = useGlobalStore(
-    (state) => state.retrieveSingleDrawing
-  );
+
   const user = useGlobalStore((state) => state.user);
 
   const addDrawingMutation = useMutation({
     mutationFn: (drawing: Drawing) =>
       addDrawing(drawing.title, drawing.path, drawing.base64_image),
     onError: (err) => console.error('Error adding drawing: ', err),
-    onSuccess: () => console.log('Added drawing'),
-  });
-
-  const retrieveDrawingsQuery = useQuery({
-    queryKey: ['drawings'],
-    queryFn: () => retrieveDrawings(),
-    enabled: !!user,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drawings'] });
+      console.log('Added drawing');
+    },
   });
 
   return {
     addDrawingMutation,
-    retrieveDrawingsQuery,
   };
 };
 

@@ -1,12 +1,8 @@
 // @ts-nocheck
 import { Dialog, Transition, Listbox } from '@headlessui/react';
 import {
-  ArchiveIcon,
-  BanIcon,
-  FlagIcon,
   InboxIcon,
   MenuIcon,
-  PencilAltIcon,
   UserCircleIcon,
   XIcon,
 } from '@heroicons/react/outline';
@@ -14,8 +10,6 @@ import {
   ReplyIcon,
   SaveAsIcon,
   TrashIcon,
-  CheckIcon,
-  SelectorIcon,
   PencilIcon,
   FastForwardIcon,
   XCircleIcon,
@@ -29,19 +23,16 @@ import React, {
   useEffect,
   useState,
   useRef,
-  createElement,
 } from 'react';
 import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { Main } from '../components/styled/board.styled';
 import { HexColorPicker } from 'react-colorful';
 // Drawing
-import { ReactSketchCanvas } from 'react-sketch-canvas';
-import useInterval from 'lib/useInterval';
-import { useAppDispatch, useAppSelector } from 'lib/hooks';
-import { loadUser, logoutUser, uStatus } from 'lib/userSlice';
 import { useRouter } from 'next/router';
-import { loadAdrawing, postDrawing, drawingStatus } from 'lib/drawingSlice';
+import { useGlobalStore } from 'lib/useGlobalStore';
+import useDrawing from 'lib/hooks/useDrawing';
+import useAuth from 'lib/hooks/useAuth';
 
 const sidebarNavigation = [
   { name: 'Open', href: '#', icon: InboxIcon, current: true },
@@ -57,14 +48,11 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-const getNodeId = () => `room_${+new Date()}`;
 // Drawing
 
 const Drawing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [color, setColor] = useState('#aabbcc');
-  const userStatus = useAppSelector(uStatus);
-  const [roomId, setRoomId] = useState(getNodeId());
   const router = useRouter();
   const [socketUrl, setSocketUrl] = useState(
     'ws://localhost:8000/ws/chat/' + 'room_1718731252411' + '/'
@@ -73,16 +61,19 @@ const Drawing = () => {
   const canvasDataRef = useRef([]);
   const canvasRef = useRef(null);
   const [title, setTitle] = useState('');
-  const {
-    sendMessage,
-    sendJsonMessage,
-    lastMessage,
-    lastJsonMessage,
-    readyState,
-  } = useWebSocket(socketUrl, {});
-  const dispatch = useAppDispatch();
-  const drawings = useAppSelector((state: RootState) => state.drawing.drawings);
-  const drStatus = useAppSelector(drawingStatus);
+  const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {});
+
+  // Undo state
+  const [history, setHistory] = useState([]);
+  const [currentStep, setCurrentStep] = useState(-1);
+
+  // Eraser
+  const [isErasing, setIsErasing] = useState(false);
+
+  const user = useGlobalStore((state) => state.user);
+
+  const { signOutMutation } = useAuth();
+  // const { addDrawingMutation } = useDrawing();
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -92,79 +83,102 @@ const Drawing = () => {
     [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
   }[readyState];
 
-  const logout = () => {
-    dispatch(logoutUser());
-  };
+  if (!user) {
+    router.push('/');
+  }
+
   const changeTitle = (e) => {
     setTitle(e.target.value);
-  };
-  const onUpdate = (updatedPaths: CanvasPath[]): void => {
-    setPaths(updatedPaths);
   };
 
   // Saving Drawing
   const onSubmit = (e) => {
     e.preventDefault();
-    canvasRef.current?.exportImage('jpeg').then((base64_image) => {
-      dispatch(postDrawing({ title, path, base64_image }));
-    });
-  };
 
-  // If a token is available,check if it's valid
-  useEffect(() => {
-    if (userStatus == 'idle') {
-      dispatch(loadUser());
-    }
-    // Redirect to the landing page if the token is invalid
-    else if (userStatus == 'failed') {
-      router.push('/');
-    }
-  }, [userStatus]);
+    const base64_image = canvasRef.current
+      ?.toDataURL('image/png')
+      .split(',')[1];
+
+    addDrawingMutation.mutate({ title, path, base64_image });
+  };
 
   // Handlers
   const undoHandler = () => {
-    const undo = canvasRef.current?.undo;
-    if (undo) {
-      undo();
+    if (currentStep > 0) {
+      setCurrentStep((prevStep) => prevStep - 1);
+      canvasDataRef.current = history[currentStep - 1];
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      drawOnCanvas(ctx, canvasDataRef.current);
+      handleCanvasUpdate(canvasDataRef.current);
+    } else {
+      console.log('hey');
+      console.log(currentStep);
     }
   };
 
   const redoHandler = () => {
-    const redo = canvasRef.current?.redo;
-    if (redo) {
-      redo();
+    if (currentStep < history.length - 1) {
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+
+      canvasDataRef.current = history[currentStep + 1];
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+
+      drawOnCanvas(ctx, canvasDataRef.current);
+      handleCanvasUpdate(canvasDataRef.current);
     }
   };
 
   const resetCanvasHandler = () => {
-    const reset = canvasRef.current?.resetCanvas;
-    if (reset) {
-      reset();
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvasDataRef.current = [];
+      setHistory([]);
+      setCurrentStep(-1);
+      handleCanvasUpdate(canvasDataRef.current);
     }
   };
 
   const penHandler = () => {
-    const eraseMode = canvasRef.current?.eraseMode;
-    if (eraseMode) {
-      eraseMode(false);
-    }
+    setIsErasing(false);
   };
 
   const eraserHandler = () => {
-    const eraseMode = canvasRef.current?.eraseMode;
-    if (eraseMode) {
-      eraseMode(true);
-    }
+    setIsErasing(true);
+    console.log(isErasing);
   };
 
   const exportImage = () => {
-    canvasRef.current?.exportImage('jpeg').then((res) => {
+    if (canvasRef.current) {
+      const originalCanvas = canvasRef.current;
+
+      // Create a temporary canvas
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = originalCanvas.width;
+      tempCanvas.height = originalCanvas.height;
+      const tempCtx = tempCanvas.getContext('2d');
+
+      // Fill the temporary canvas with a white background
+      tempCtx.fillStyle = 'white';
+      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+      // Draw the original canvas content onto the temporary canvas
+      tempCtx.drawImage(originalCanvas, 0, 0);
+
+      // Get the image data URL from the temporary canvas
+      const imageDataURL = tempCanvas.toDataURL('image/png');
+
+      // Create a link and trigger the download
       let a = document.createElement('a');
-      a.href = res;
-      a.download = 'Image.jpeg';
+      a.href = imageDataURL;
+      a.download = 'Image.png';
       a.click();
       a.remove();
-    });
+    }
   };
 
   const handleCanvasUpdate = useCallback(
@@ -182,12 +196,41 @@ const Drawing = () => {
         if (index === 0) {
           ctx.moveTo(point.x, point.y);
         } else {
+          if (point.isEraser) {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineWidth = 20;
+          } else {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+          }
           ctx.lineTo(point.x, point.y);
         }
       });
       ctx.stroke();
     });
   }, []);
+
+  useEffect(() => {
+    const resizeCanvas = () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const parent = canvas.parentElement;
+        canvas.width = parent.clientWidth;
+
+        // Redraw the canvas content if necessary
+        const ctx = canvas.getContext('2d');
+        drawOnCanvas(ctx, canvasDataRef.current);
+      }
+    };
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, [drawOnCanvas]);
 
   useEffect(() => {
     if (lastMessage !== null) {
@@ -208,7 +251,12 @@ const Drawing = () => {
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      canvasDataRef.current.push([{ x, y }]);
+      canvasDataRef.current.push([{ x, y, isEraser: isErasing }]);
+      setHistory((prevHistory) => [
+        ...prevHistory.slice(0, currentStep + 1),
+        [...canvasDataRef.current],
+      ]);
+      setCurrentStep((prevStep) => prevStep + 1);
       handleCanvasUpdate(canvasDataRef.current);
     };
     const handleCanvasMouseMove = (e) => {
@@ -218,7 +266,7 @@ const Drawing = () => {
       const y = e.clientY - rect.top;
       const currentPath =
         canvasDataRef.current[canvasDataRef.current.length - 1];
-      currentPath.push({ x, y });
+      currentPath.push({ x, y, isEraser: isErasing });
       drawOnCanvas(ctx, canvasDataRef.current);
       handleCanvasUpdate(canvasDataRef.current);
     };
@@ -228,7 +276,7 @@ const Drawing = () => {
       canvas.removeEventListener('mousedown', handleCanvasMouseDown);
       canvas.removeEventListener('mousemove', handleCanvasMouseMove);
     };
-  }, [handleCanvasUpdate, drawOnCanvas]);
+  }, [handleCanvasUpdate, drawOnCanvas, currentStep]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">
@@ -330,7 +378,7 @@ const Drawing = () => {
                     </a>
                     <button
                       className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
-                      onClick={logout}
+                      onClick={() => signOutMutation.mutate()}
                     >
                       Sign out
                     </button>
@@ -489,18 +537,13 @@ const Drawing = () => {
               </span>
             </div>
           </div>
-          <div className="h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl">
-            {/* <ReactSketchCanvas
-              className="rounded-xl"
+          <div className="h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl relative">
+            <canvas
               ref={canvasRef}
-              width="auto"
-              height="450px"
-              strokeWidth={4}
-              strokeColor={color}
-              allowOnlyPointerType="all"
-              onUpdate={onUpdate}
-            /> */}
-            <canvas ref={canvasRef} width={800} height={600} />
+              height={450}
+              width="100%"
+              className="rounded-xl"
+            />
           </div>
           <div className="flex flex-wrap justify-center mt-5 lg:mt-0 lg:ml-4">
             <HexColorPicker color={color} onChange={setColor} />

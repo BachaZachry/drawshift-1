@@ -57,10 +57,13 @@ const Dasboard = () => {
   const setAuthModalOpen = useGlobalStore((state) => state.setAuthModalOpen);
 
   const { setUserQuery, signOutMutation } = useAuth();
-  const { retrieveDrawingsQuery } = useDrawing();
 
+  const { data: drawings } = useQuery({
+    queryKey: ['drawings'],
+    queryFn: () => retrieveDrawings(),
+    enabled: !!user,
+  });
   const { isLoading } = setUserQuery;
-  const { data: drawings } = retrieveDrawingsQuery;
 
   useEffect(() => {
     if (!user) {
