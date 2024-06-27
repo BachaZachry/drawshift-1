@@ -55,9 +55,7 @@ const Drawing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [color, setColor] = useState('#aabbcc');
   const router = useRouter();
-  const [socketUrl, setSocketUrl] = useState(
-    'ws://localhost:8000/ws/chat/' + 'room_1718731252411' + '/'
-  );
+  const [socketUrl, setSocketUrl] = useState(null);
   const canvasDataRef = useRef([]);
   const canvasRef = useRef(null);
   const [title, setTitle] = useState('');
@@ -83,6 +81,12 @@ const Drawing = () => {
     [ReadyState.CLOSED]: 'Closed',
     [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
   }[readyState];
+
+  useEffect(() => {
+    if (router.isReady && router.query.id) {
+      setSocketUrl(`ws://localhost:8000/ws/chat/${router.query.id}/`);
+    }
+  }, [router.isReady, router.query.id]);
 
   if (!user) {
     router.push('/');
