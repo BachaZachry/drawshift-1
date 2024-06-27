@@ -10,9 +10,6 @@ interface Drawing {
 const useDrawing = () => {
   const queryClient = useQueryClient();
   const addDrawing = useGlobalStore((state) => state.addDrawing);
-  const retrieveDrawings = useGlobalStore((state) => state.retrieveDrawings);
-
-  const user = useGlobalStore((state) => state.user);
 
   const addDrawingMutation = useMutation({
     mutationFn: (drawing: Drawing) =>

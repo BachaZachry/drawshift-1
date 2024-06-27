@@ -57,7 +57,6 @@ const Drawing = () => {
   const [socketUrl, setSocketUrl] = useState(
     'ws://localhost:8000/ws/chat/' + 'room_1718731252411' + '/'
   );
-  const [path, setPaths] = useState([]);
   const canvasDataRef = useRef([]);
   const canvasRef = useRef(null);
   const [title, setTitle] = useState('');
@@ -73,7 +72,7 @@ const Drawing = () => {
   const user = useGlobalStore((state) => state.user);
 
   const { signOutMutation } = useAuth();
-  // const { addDrawingMutation } = useDrawing();
+  const { addDrawingMutation } = useDrawing();
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -94,12 +93,35 @@ const Drawing = () => {
   // Saving Drawing
   const onSubmit = (e) => {
     e.preventDefault();
+    if (canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
 
-    const base64_image = canvasRef.current
-      ?.toDataURL('image/png')
-      .split(',')[1];
+      // Create a new canvas with the same dimensions
+      const newCanvas = document.createElement('canvas');
+      newCanvas.width = canvas.width;
+      newCanvas.height = canvas.height;
+      const newCtx = newCanvas.getContext('2d');
 
-    addDrawingMutation.mutate({ title, path, base64_image });
+      // Fill the new canvas with a white background
+      newCtx.fillStyle = 'white';
+      newCtx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
+      // Draw the original canvas content onto the new canvas
+      newCtx.drawImage(canvas, 0, 0);
+
+      // Convert the new canvas to a data URL
+      const dataURL = newCanvas.toDataURL('image/png');
+
+      // Extract the base64 data
+      const base64Image = dataURL.split(',')[1];
+
+      addDrawingMutation.mutate({
+        title,
+        path: canvasDataRef.current,
+        base64_image: base64Image,
+      });
+    }
   };
 
   // Handlers

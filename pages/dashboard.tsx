@@ -45,7 +45,7 @@ import Head from 'next/head';
 import { RoomPopup } from 'components/RoomPopup';
 import { useGlobalStore } from 'lib/useGlobalStore';
 import useAuth from 'lib/hooks/useAuth';
-import useDrawing from 'lib/hooks/useDrawing';
+import { useQuery } from '@tanstack/react-query';
 
 const getRoomId = () => `room_${+new Date()}`;
 
@@ -54,15 +54,19 @@ const Dasboard = () => {
   const router = useRouter();
 
   const user = useGlobalStore((state) => state.user);
+  const retrieveDrawings = useGlobalStore((state) => state.retrieveDrawings);
   const setAuthModalOpen = useGlobalStore((state) => state.setAuthModalOpen);
 
   const { setUserQuery, signOutMutation } = useAuth();
 
-  const { data: drawings } = useQuery({
+  const retrieveDrawingsQuery = useQuery({
     queryKey: ['drawings'],
     queryFn: () => retrieveDrawings(),
     enabled: !!user,
   });
+
+  const { data: drawings } = retrieveDrawingsQuery;
+  console.log(drawings);
   const { isLoading } = setUserQuery;
 
   useEffect(() => {
@@ -299,7 +303,7 @@ const Dasboard = () => {
                   key={drawing.id}
                 >
                   <img
-                    src={drawing.base64_image}
+                    src={`data:image/png;base64,${drawing.base64_image}`}
                     alt={drawing.title}
                     className="object-cover w-80 h-48 rounded mx-2 my-2"
                   />
