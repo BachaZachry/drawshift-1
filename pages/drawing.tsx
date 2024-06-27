@@ -33,6 +33,7 @@ import { useRouter } from 'next/router';
 import { useGlobalStore } from 'lib/useGlobalStore';
 import useDrawing from 'lib/hooks/useDrawing';
 import useAuth from 'lib/hooks/useAuth';
+import Toast from 'components/Toast';
 
 const sidebarNavigation = [
   { name: 'Open', href: '#', icon: InboxIcon, current: true },
@@ -61,6 +62,7 @@ const Drawing = () => {
   const canvasRef = useRef(null);
   const [title, setTitle] = useState('');
   const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {});
+  const [showToast, setShowToast] = useState(false);
 
   // Undo state
   const [history, setHistory] = useState([]);
@@ -89,6 +91,14 @@ const Drawing = () => {
   const changeTitle = (e) => {
     setTitle(e.target.value);
   };
+
+  useEffect(() => {
+    if (addDrawingMutation.isSuccess) {
+      setShowToast(true);
+      setTitle('');
+      resetCanvasHandler();
+    }
+  }, [addDrawingMutation.isSuccess]);
 
   // Saving Drawing
   const onSubmit = (e) => {
@@ -576,6 +586,11 @@ const Drawing = () => {
             <HexColorPicker color={color} onChange={setColor} />
           </div>
         </Main>
+        <Toast
+          show={showToast}
+          setShow={setShowToast}
+          message="Added drawing successfully!"
+        />
       </div>
     </div>
   );
