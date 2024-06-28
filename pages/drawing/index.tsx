@@ -1,209 +1,324 @@
 // @ts-nocheck
-import { Dialog, Transition, Listbox } from "@headlessui/react";
+import { Dialog, Transition, Listbox } from '@headlessui/react';
 import {
-  ArchiveIcon,
-  BanIcon,
-  FlagIcon,
   InboxIcon,
   MenuIcon,
-  PencilAltIcon,
   UserCircleIcon,
   XIcon,
-} from "@heroicons/react/outline";
+} from '@heroicons/react/outline';
 import {
   ReplyIcon,
   SaveAsIcon,
   TrashIcon,
-  CheckIcon,
-  SelectorIcon,
   PencilIcon,
   FastForwardIcon,
   XCircleIcon,
   DownloadIcon,
   DuplicateIcon,
-} from "@heroicons/react/solid";
-import Head from "next/head";
+} from '@heroicons/react/solid';
+import Head from 'next/head';
 import React, {
   Fragment,
   useCallback,
   useEffect,
   useState,
   useRef,
-  createElement,
-} from "react";
-import "react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css";
-import useWebSocket, { ReadyState } from "react-use-websocket";
-import { Main } from "../components/styled/board.styled";
-import { HexColorPicker } from "react-colorful";
+} from 'react';
+import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
+import { Main } from '../../components/styled/board.styled';
+import { HexColorPicker } from 'react-colorful';
 // Drawing
-import { ReactSketchCanvas } from "react-sketch-canvas";
-import useInterval from "lib/useInterval";
-import { useAppDispatch, useAppSelector } from "lib/hooks";
-import { loadUser, logoutUser, uStatus } from "lib/userSlice";
-import { useRouter } from "next/router";
-import { loadAdrawing, postDrawing, drawingStatus } from "lib/drawingSlice";
+import { useRouter } from 'next/router';
+import { useGlobalStore } from 'lib/useGlobalStore';
+import useDrawing from 'lib/hooks/useDrawing';
+import useAuth from 'lib/hooks/useAuth';
+import Toast from 'components/Toast';
 
 const sidebarNavigation = [
-  { name: "Open", href: "#", icon: InboxIcon, current: true },
+  { name: 'Open', href: '#', icon: InboxIcon, current: true },
   {
-    name: "Your Profile",
-    href: "/dashboard",
+    name: 'Your Profile',
+    href: '/dashboard',
     icon: UserCircleIcon,
     current: false,
   },
 ];
 
 function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
-const getNodeId = () => `room_${+new Date()}`;
 // Drawing
 
 const Drawing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [color, setColor] = useState("#aabbcc");
-  const userStatus = useAppSelector(uStatus);
-  // const [roomId, setRoomId] = useState(getNodeId());
+  const [color, setColor] = useState('#aabbcc');
   const router = useRouter();
-  const [socketUrl, setSocketUrl] = useState(
-    "ws://localhost:3003/ws/chat/" + router.query.id + "/"
-  );
-  const [path, setPaths] = useState<CanvasPath[]>([]);
-  const [title, setTitle] = useState("");
-  const {
-    sendMessage,
-    sendJsonMessage,
-    lastMessage,
-    lastJsonMessage,
-    readyState,
-  } = useWebSocket(socketUrl);
-  const dispatch = useAppDispatch();
-  const drawings = useAppSelector((state: RootState) => state.drawing.drawings);
-  const drStatus = useAppSelector(drawingStatus);
+  const [socketUrl, setSocketUrl] = useState(null);
+  const canvasDataRef = useRef([]);
+  const canvasRef = useRef(null);
+  const [title, setTitle] = useState('');
+  const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {});
+  const [showToast, setShowToast] = useState(false);
 
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  // Undo state
+  const [history, setHistory] = useState([]);
+  const [currentStep, setCurrentStep] = useState(-1);
+
+  // Eraser
+  const [isErasing, setIsErasing] = useState(false);
+
+  const user = useGlobalStore((state) => state.user);
+
+  const { signOutMutation } = useAuth();
+  const { addDrawingMutation } = useDrawing();
+
   const connectionStatus = {
-    [ReadyState.CONNECTING]: "Connecting",
-    [ReadyState.OPEN]: "Open",
-    [ReadyState.CLOSING]: "Closing",
-    [ReadyState.CLOSED]: "Closed",
-    [ReadyState.UNINSTANTIATED]: "Uninstantiated",
+    [ReadyState.CONNECTING]: 'Connecting',
+    [ReadyState.OPEN]: 'Open',
+    [ReadyState.CLOSING]: 'Closing',
+    [ReadyState.CLOSED]: 'Closed',
+    [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
   }[readyState];
 
-  const logout = () => {
-    dispatch(logoutUser());
-  };
+  useEffect(() => {
+    if (router.isReady && router.query.room) {
+      setSocketUrl(
+        `${process.env.NEXT_PUBLIC_BACKEND_WS_HOST}${router.query.room}/`
+      );
+    }
+  }, [router.isReady, router.query.id]);
+
+  if (!user) {
+    router.push('/');
+  }
+
   const changeTitle = (e) => {
     setTitle(e.target.value);
   };
-  const onUpdate = (updatedPaths: CanvasPath[]): void => {
-    setPaths(updatedPaths);
-  };
+
+  useEffect(() => {
+    if (addDrawingMutation.isSuccess) {
+      setShowToast(true);
+      setTitle('');
+      resetCanvasHandler();
+    }
+  }, [addDrawingMutation.isSuccess]);
 
   // Saving Drawing
   const onSubmit = (e) => {
     e.preventDefault();
-    canvasRef.current?.exportImage("jpeg").then((base64_image) => {
-      dispatch(postDrawing({ title, path, base64_image }));
-    });
+    if (canvasRef.current) {
+      const canvas = canvasRef.current;
+
+      // Create a new canvas with the same dimensions
+      const newCanvas = document.createElement('canvas');
+      newCanvas.width = canvas.width;
+      newCanvas.height = canvas.height;
+      const newCtx = newCanvas.getContext('2d');
+
+      // Fill the new canvas with a white background
+      newCtx.fillStyle = 'white';
+      newCtx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
+      // Draw the original canvas content onto the new canvas
+      newCtx.drawImage(canvas, 0, 0);
+
+      // Convert the new canvas to a data URL
+      const dataURL = newCanvas.toDataURL('image/png');
+
+      // Extract the base64 data
+      const base64Image = dataURL.split(',')[1];
+
+      addDrawingMutation.mutate({
+        title,
+        path: canvasDataRef.current,
+        base64_image: base64Image,
+      });
+    }
   };
-
-  // If a token is available,check if it's valid
-  useEffect(() => {
-    if (userStatus == "idle") {
-      dispatch(loadUser());
-    }
-    // Redirect to the landing page if the token is invalid
-    else if (userStatus == "failed") {
-      router.push("/");
-    }
-  }, [userStatus]);
-
-  const canvasRef = useRef<ReactSketchCanvas>(null);
 
   // Handlers
   const undoHandler = () => {
-    const undo = canvasRef.current?.undo;
-    if (undo) {
-      undo();
+    if (currentStep >= 0) {
+      const newStep = currentStep - 1;
+      setCurrentStep(newStep);
+
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+
+      if (newStep === -1) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvasDataRef.current = [];
+      } else {
+        canvasDataRef.current = history[newStep];
+      }
+      drawOnCanvas(ctx, canvasDataRef.current);
+      handleCanvasUpdate(canvasDataRef.current);
     }
   };
 
   const redoHandler = () => {
-    const redo = canvasRef.current?.redo;
-    if (redo) {
-      redo();
+    if (currentStep < history.length - 1) {
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+
+      canvasDataRef.current = history[currentStep + 1];
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+
+      drawOnCanvas(ctx, canvasDataRef.current);
+      handleCanvasUpdate(canvasDataRef.current);
     }
   };
 
   const resetCanvasHandler = () => {
-    const reset = canvasRef.current?.resetCanvas;
-    if (reset) {
-      reset();
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvasDataRef.current = [];
+      setHistory([]);
+      setCurrentStep(-1);
+      handleCanvasUpdate(canvasDataRef.current);
     }
   };
 
   const penHandler = () => {
-    const eraseMode = canvasRef.current?.eraseMode;
-    if (eraseMode) {
-      eraseMode(false);
-    }
+    setIsErasing(false);
   };
 
   const eraserHandler = () => {
-    const eraseMode = canvasRef.current?.eraseMode;
-    if (eraseMode) {
-      eraseMode(true);
-    }
+    setIsErasing(true);
+    console.log(isErasing);
   };
+
   const exportImage = () => {
-    canvasRef.current?.exportImage("jpeg").then((res) => {
-      let a = document.createElement("a");
-      a.href = res;
-      a.download = "Image.jpeg";
+    if (canvasRef.current) {
+      const originalCanvas = canvasRef.current;
+
+      // Create a temporary canvas
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = originalCanvas.width;
+      tempCanvas.height = originalCanvas.height;
+      const tempCtx = tempCanvas.getContext('2d');
+
+      // Fill the temporary canvas with a white background
+      tempCtx.fillStyle = 'white';
+      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+      // Draw the original canvas content onto the temporary canvas
+      tempCtx.drawImage(originalCanvas, 0, 0);
+
+      // Get the image data URL from the temporary canvas
+      const imageDataURL = tempCanvas.toDataURL('image/png');
+
+      // Create a link and trigger the download
+      let a = document.createElement('a');
+      a.href = imageDataURL;
+      a.download = 'Image.png';
       a.click();
       a.remove();
+    }
+  };
+
+  const handleCanvasUpdate = useCallback(
+    (data) => {
+      sendMessage(JSON.stringify({ type: 'canvas_update', canvas_data: data }));
+    },
+    [sendMessage]
+  );
+
+  const drawOnCanvas = useCallback((ctx, canvasData) => {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    canvasData.forEach((path) => {
+      ctx.beginPath();
+      path.forEach((point, index) => {
+        if (index === 0) {
+          ctx.moveTo(point.x, point.y);
+        } else {
+          if (point.isEraser) {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineWidth = 20;
+          } else {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+          }
+          ctx.lineTo(point.x, point.y);
+        }
+      });
+      ctx.stroke();
     });
-  };
-  // Load unto the canvas
-  const loadPath = (canvasPath: CanvasPath[]) => {
-    const load = canvasRef.current?.loadPaths;
-    if (load) {
-      load(canvasPath);
-      console.log("loaded");
-    }
-  };
-
-  // Handling updates
-  useEffect(() => {
-    if (lastJsonMessage != null) {
-      console.log(lastJsonMessage["message"]);
-      onUpdate(lastJsonMessage["message"]);
-      loadPath(lastJsonMessage["message"]);
-    }
-  }, [lastJsonMessage]);
-
-  useEffect(() => {
-    if (router.query.dr_id) {
-      dispatch(loadAdrawing(router.query.dr_id));
-      console.log(drawings.path);
-    }
   }, []);
+
   useEffect(() => {
-    if (drStatus == "succeeded") {
-      if (drawings.path) {
-        console.log(drawings.path);
-        loadPath(drawings.path);
+    const resizeCanvas = () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const parent = canvas.parentElement;
+        canvas.width = parent.clientWidth;
+
+        // Redraw the canvas content if necessary
+        const ctx = canvas.getContext('2d');
+        drawOnCanvas(ctx, canvasDataRef.current);
+      }
+    };
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, [drawOnCanvas]);
+
+  useEffect(() => {
+    if (lastMessage !== null) {
+      const { type, canvas_data } = JSON.parse(lastMessage.data);
+      if (type === 'canvas_update') {
+        canvasDataRef.current = canvas_data;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        drawOnCanvas(ctx, canvas_data);
       }
     }
-  }, [drStatus]);
+  }, [lastMessage, drawOnCanvas]);
 
-  // Polling
-  useInterval(() => {
-    sendJsonMessage(path);
-  }, 1000);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const handleCanvasMouseDown = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      canvasDataRef.current.push([{ x, y, isEraser: isErasing }]);
+      setHistory((prevHistory) => [
+        ...prevHistory.slice(0, currentStep + 1),
+        [...canvasDataRef.current],
+      ]);
+      setCurrentStep((prevStep) => prevStep + 1);
+      handleCanvasUpdate(canvasDataRef.current);
+    };
+    const handleCanvasMouseMove = (e) => {
+      if (e.buttons !== 1) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const currentPath =
+        canvasDataRef.current[canvasDataRef.current.length - 1];
+      currentPath.push({ x, y, isEraser: isErasing });
+      drawOnCanvas(ctx, canvasDataRef.current);
+      handleCanvasUpdate(canvasDataRef.current);
+    };
+    canvas.addEventListener('mousedown', handleCanvasMouseDown);
+    canvas.addEventListener('mousemove', handleCanvasMouseMove);
+    return () => {
+      canvas.removeEventListener('mousedown', handleCanvasMouseDown);
+      canvas.removeEventListener('mousemove', handleCanvasMouseMove);
+    };
+  }, [handleCanvasUpdate, drawOnCanvas, currentStep]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">
@@ -305,7 +420,7 @@ const Drawing = () => {
                     </a>
                     <button
                       className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
-                      onClick={logout}
+                      onClick={() => signOutMutation.mutate()}
                     >
                       Sign out
                     </button>
@@ -331,9 +446,9 @@ const Drawing = () => {
                 href={item.href}
                 className={classNames(
                   item.current
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-400 hover:bg-gray-700",
-                  "flex-shrink-0 inline-flex items-center justify-center h-14 w-14 rounded-lg"
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-400 hover:bg-gray-700',
+                  'flex-shrink-0 inline-flex items-center justify-center h-14 w-14 rounded-lg'
                 )}
               >
                 <span className="sr-only">{item.name}</span>
@@ -464,22 +579,23 @@ const Drawing = () => {
               </span>
             </div>
           </div>
-          <div className="h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl">
-            <ReactSketchCanvas
-              className="rounded-xl"
+          <div className="h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl relative">
+            <canvas
               ref={canvasRef}
-              width="auto"
-              height="450px"
-              strokeWidth={4}
-              strokeColor={color}
-              allowOnlyPointerType="all"
-              onUpdate={onUpdate}
+              height={450}
+              width="100%"
+              className="rounded-xl"
             />
           </div>
           <div className="flex flex-wrap justify-center mt-5 lg:mt-0 lg:ml-4">
             <HexColorPicker color={color} onChange={setColor} />
           </div>
         </Main>
+        <Toast
+          show={showToast}
+          setShow={setShowToast}
+          message="Added drawing successfully!"
+        />
       </div>
     </div>
   );

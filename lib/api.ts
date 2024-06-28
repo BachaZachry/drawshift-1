@@ -1,15 +1,23 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
+import { useGlobalStore } from './useGlobalStore';
 
-let baseURL = "http://localhost:3003/"
-
-const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-
+let baseURL = process.env.NEXT_PUBLIC_BACKEND_HOST;
 
 export const api = axios.create({
-    baseURL : baseURL,
-    headers: {
-        Authorization : token ? "Token " + token : null,
-        "Content-Type":"application/json",
-        accept:"application/json",
-    },
-})
+  baseURL: baseURL,
+  headers: {
+    'Content-Type': 'application/json',
+    accept: 'application/json',
+  },
+});
+
+api.interceptors.request.use((config: AxiosRequestConfig) => {
+  const token = useGlobalStore.getState().token;
+
+  config.headers = config.headers ?? {};
+
+  if (token) {
+    config.headers['Authorization'] = `Token ${token}`;
+  }
+  return config;
+});

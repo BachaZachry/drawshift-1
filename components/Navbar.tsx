@@ -1,42 +1,27 @@
-import { Disclosure } from "@headlessui/react";
-import { LoginIcon } from "@heroicons/react/solid";
-import { useAppDispatch, useAppSelector } from "lib/hooks";
-import { open, close } from "lib/uiLoginSlice";
-import { loadUser, username, uStatus, logoutUser } from "lib/userSlice";
-import { useRouter } from "next/router";
-import { useEffect } from "react";
+import { Disclosure } from '@headlessui/react';
+import { LoginIcon } from '@heroicons/react/solid';
+import useAuth from 'lib/hooks/useAuth';
+import { useGlobalStore } from 'lib/useGlobalStore';
+import { useRouter } from 'next/router';
+import { useEffect } from 'react';
 
 function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
 export default function Navbar() {
-  const user = useAppSelector(username) == null ? false : true;
   const router = useRouter();
-  const dispatch = useAppDispatch();
-  const userStatus = useAppSelector(uStatus);
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const user = useGlobalStore((state) => state.user);
+  const setAuthModalOpen = useGlobalStore((state) => state.setAuthModalOpen);
+
+  const { signOutMutation } = useAuth();
 
   const logout = () => {
-    dispatch(logoutUser());
+    signOutMutation.mutate();
   };
   const openLoginForm = () => {
-    dispatch(open());
+    setAuthModalOpen(true);
   };
-
-  useEffect(() => {
-    // If a token is available,check if it's valid
-    if (userStatus == "idle" || userStatus == "failed") {
-      if (token != null) {
-        dispatch(loadUser());
-      }
-    }
-    // Close login form when you successfully login
-    else if (userStatus == "succeeded") {
-      dispatch(close());
-    }
-  }, [userStatus]);
 
   return (
     <Disclosure as="nav" className="relative bg-gray-800">
@@ -78,7 +63,7 @@ export default function Navbar() {
                   )}
                   {!!user ? (
                     <button
-                      onClick={() => router.push("/dashboard")}
+                      onClick={() => router.push('/dashboard')}
                       type="button"
                       className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-white transition duration-200 bg-indigo-500 border border-transparent rounded-md shadow-sm font-monst hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500"
                     >

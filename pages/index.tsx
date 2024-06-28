@@ -1,9 +1,9 @@
-import { AuthPopup } from "components/Auth";
-import Header from "components/Header";
-import Navbar from "components/Navbar";
-import Head from "next/head";
-import Card from "components/landing/Card";
-import { Toaster } from "react-hot-toast";
+import { AuthPopup } from 'components/Auth';
+import Header from 'components/Header';
+import Navbar from 'components/Navbar';
+import Head from 'next/head';
+import Card from 'components/landing/Card';
+import { Toaster } from 'react-hot-toast';
 
 export default function Home() {
   return (

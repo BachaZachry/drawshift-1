@@ -1,30 +1,28 @@
-import { Dialog, Transition } from "@headlessui/react";
-import { LoginIcon, XIcon } from "@heroicons/react/solid";
-import { Fragment, useRef, useState } from "react";
-import GoogleLogin from "react-google-login";
-import { useRouter } from "next/router";
-import { useAppDispatch, useAppSelector } from "lib/hooks";
-import { googleUserLogin } from "lib/userSlice";
-import { uiLoginState, open, close } from "lib/uiLoginSlice";
+import { Dialog, Transition } from '@headlessui/react';
+import { XIcon } from '@heroicons/react/solid';
+import { Fragment, useRef } from 'react';
+import GoogleLogin from 'react-google-login';
+import { useGlobalStore } from 'lib/useGlobalStore';
+import useAuth from 'lib/hooks/useAuth';
 
 export const AuthPopup = () => {
   const cancelButtonRef = useRef();
-  const dispatch = useAppDispatch();
-  const router = useRouter();
-  const loginForm = useAppSelector(uiLoginState);
+  const setAuthModalOpen = useGlobalStore((state) => state.setAuthModalOpen);
+  const authModalOpen = useGlobalStore((state) => state.authModalOpen);
+
+  const { googleAuthMutation } = useAuth();
 
   const closeModal = () => {
-    dispatch(close());
+    setAuthModalOpen(false);
   };
 
-  async function responseGoogle(response) {
-    await dispatch(googleUserLogin(response.accessToken));
-    router.push("/dashboard");
+  function responseGoogle(response) {
+    googleAuthMutation.mutate(response.accessToken);
   }
 
   return (
     <Transition
-      show={loginForm}
+      show={authModalOpen}
       //@ts-ignore
       as={Fragment}
       enter="transition-opacity duration-300 ease-out"
@@ -35,7 +33,7 @@ export const AuthPopup = () => {
       leaveTo="opacity-0"
     >
       <Dialog
-        open={loginForm}
+        open={authModalOpen}
         initialFocus={cancelButtonRef}
         static
         onClose={closeModal}

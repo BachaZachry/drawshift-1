@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Dialog, Listbox, Transition } from "@headlessui/react";
+import { Dialog, Listbox, Transition } from '@headlessui/react';
 import {
   ArchiveIcon,
   BanIcon,
@@ -11,7 +11,7 @@ import {
   SearchIcon,
   UserCircleIcon,
   XIcon,
-} from "@heroicons/react/outline";
+} from '@heroicons/react/outline';
 import {
   CalendarIcon,
   CheckCircleIcon,
@@ -25,10 +25,9 @@ import {
   ViewGridAddIcon,
   ViewGridIcon,
   ViewListIcon,
-} from "@heroicons/react/solid";
-import Spinner from "components/Spinner";
-import React, { Fragment, useEffect, useState } from "react";
-import { useQuery } from "react-query";
+} from '@heroicons/react/solid';
+import Spinner from 'components/Spinner';
+import React, { Fragment, useEffect, useState } from 'react';
 import {
   Header,
   HeaderButtons,
@@ -40,68 +39,49 @@ import {
   Searchbar,
   SearchbarContainer,
   Utils,
-} from "../components/styled/dashboard.styled";
-import { compress, decompress } from "lzutf8";
-import { useRouter } from "next/router";
-import Head from "next/head";
-import DeleteForm from "components/Settings";
-import dayjs from "dayjs";
-import {
-  username,
-  UserState,
-  uStatus,
-  loadUser,
-  logoutUser,
-} from "../lib/userSlice";
-import { useAppSelector, useAppDispatch } from "lib/hooks";
-import { open } from "lib/uiLoginSlice";
-import { RootState } from "lib/store";
-import { loadDrawings } from "lib/drawingSlice";
-import { RoomPopup } from "components/RoomPopup";
-
-const views = [
-  { id: 1, name: "Wade Cooper" },
-  { id: 2, name: "Arlene Mccoy" },
-  { id: 3, name: "Devon Webb" },
-];
+} from '../components/styled/dashboard.styled';
+import { useRouter } from 'next/router';
+import Head from 'next/head';
+import { RoomPopup } from 'components/RoomPopup';
+import { useGlobalStore } from 'lib/useGlobalStore';
+import useAuth from 'lib/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
 
 const getRoomId = () => `room_${+new Date()}`;
 
 const Dasboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const usrname = useAppSelector(username);
-  const error = useAppDispatch((state: RootState) => state.user.error);
-  const dispatch = useAppDispatch();
-  const userStatus = useAppSelector(uStatus);
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const router = useRouter();
-  const drawings = useAppSelector((state: RootState) => state.drawing.drawings);
 
-  const logout = () => {
-    dispatch(logoutUser());
-  };
+  const user = useGlobalStore((state) => state.user);
+  const retrieveDrawings = useGlobalStore((state) => state.retrieveDrawings);
+  const [joinRoom, setJoinRoom] = useState(false);
 
-  // If a token is available,check if it's valid
+  const { setUserQuery, signOutMutation } = useAuth();
+
+  const retrieveDrawingsQuery = useQuery({
+    queryKey: ['drawings'],
+    queryFn: () => retrieveDrawings(),
+    enabled: !!user,
+  });
+
+  const { data: drawings } = retrieveDrawingsQuery;
+  console.log(drawings);
+  const { isLoading } = setUserQuery;
+
   useEffect(() => {
-    if (userStatus == "idle") {
-      dispatch(loadUser());
-    } else if (userStatus == "failed") {
-      router.push("/");
-    } else if (userStatus == "succeeded" && token == null) {
-      router.push("/");
+    if (!user) {
+      router.push('/');
     }
-  }, [userStatus]);
+  }, [user]);
 
-  useEffect(() => {
-    dispatch(loadDrawings());
-  }, []);
-
-  const openLoginForm = () => {
-    dispatch(open());
+  const openJoinRoom = () => {
+    setJoinRoom(true);
   };
 
-  if (userStatus == "pending") return <Spinner />;
+  if (isLoading || !user) {
+    return <Spinner />;
+  }
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-primary font-monst">
@@ -188,7 +168,7 @@ const Dasboard = () => {
                     </a>
                     <button
                       className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
-                      onClick={logout}
+                      onClick={() => signOutMutation.mutate()}
                     >
                       Sign out
                     </button>
@@ -219,7 +199,7 @@ const Dasboard = () => {
                     <div>
                       <div className="flex items-center">
                         <h1 className="ml-3 text-3xl font-bold text-white sm:truncate">
-                          Good morning, {usrname}
+                          Good morning, {user?.username}
                         </h1>
                       </div>
                       <dl className="flex flex-col mt-6 sm:ml-3 sm:mt-1 sm:flex-row sm:flex-wrap">
@@ -248,7 +228,7 @@ const Dasboard = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={logout}
+                    onClick={() => signOutMutation.mutate()}
                     className="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition duration-200 rounded-md shadow-lg bg-secondary hover:bg-primary hover:text-gray-100 focus:outline-none"
                   >
                     Logout
@@ -279,8 +259,8 @@ const Dasboard = () => {
                 <button
                   onClick={() =>
                     router.push({
-                      pathname: "/drawing",
-                      query: { id: getRoomId() },
+                      pathname: '/drawing',
+                      query: { room: getRoomId() },
                     })
                   }
                   type="button"
@@ -291,8 +271,8 @@ const Dasboard = () => {
                 <button
                   onClick={() =>
                     router.push({
-                      pathname: "/chart",
-                      query: { id: getRoomId() },
+                      pathname: '/chart',
+                      query: { room: getRoomId() },
                     })
                   }
                   type="button"
@@ -300,10 +280,10 @@ const Dasboard = () => {
                 >
                   <h3>New Diagram</h3>
                 </button>
-                <RoomPopup />
+                <RoomPopup open={joinRoom} setOpen={setJoinRoom} />
 
                 <button
-                  onClick={openLoginForm}
+                  onClick={openJoinRoom}
                   type="button"
                   className="relative inline-flex items-center p-2 text-gray-400 transition duration-200 rounded-md shadow h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >
@@ -312,18 +292,18 @@ const Dasboard = () => {
               </SearchbarContainer>
             </Searchbar>
             <div className="flex flex-row flex-wrap max-w-6xl  px-4 pt-8 mx-auto sm:px-6 lg:px-0">
-              {drawings.map((drawing) => (
+              {drawings?.map((drawing) => (
                 <button
                   onClick={() =>
                     router.push({
-                      pathname: "/drawing",
-                      query: { id: getRoomId(), dr_id: drawing.id },
+                      pathname: `/drawing/${drawing.id}`,
+                      query: { room: getRoomId() },
                     })
                   }
                   key={drawing.id}
                 >
                   <img
-                    src={drawing.base64_image}
+                    src={`data:image/png;base64,${drawing.base64_image}`}
                     alt={drawing.title}
                     className="object-cover w-80 h-48 rounded mx-2 my-2"
                   />
