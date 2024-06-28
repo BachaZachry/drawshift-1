@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Dialog, Transition, Listbox } from "@headlessui/react";
+import { Dialog, Transition, Listbox } from '@headlessui/react';
 import {
   ArchiveIcon,
   BanIcon,
@@ -9,7 +9,7 @@ import {
   PencilAltIcon,
   UserCircleIcon,
   XIcon,
-} from "@heroicons/react/outline";
+} from '@heroicons/react/outline';
 import {
   ReplyIcon,
   SaveAsIcon,
@@ -17,22 +17,22 @@ import {
   TrashIcon,
   CheckIcon,
   SelectorIcon,
-} from "@heroicons/react/solid";
-import Head from "next/head";
-import React, { Fragment, useCallback, useEffect, useState } from "react";
-import "react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css";
+} from '@heroicons/react/solid';
+import Head from 'next/head';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
 import ReactFlow, {
   removeElements,
   addEdge,
   MiniMap,
   Controls,
   Background,
-} from "react-flow-renderer";
-import useWebSocket, { ReadyState } from "react-use-websocket";
-import { Main } from "../components/styled/board.styled";
-import { HexColorPicker } from "react-colorful";
-import { logoutUser } from "lib/userSlice";
-import { useRouter } from "next/router";
+} from 'react-flow-renderer';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
+import { Main } from '../components/styled/board.styled';
+import { HexColorPicker } from 'react-colorful';
+// import { logoutUser } from "lib/userSlice";
+import { useRouter } from 'next/router';
 
 let saveableCanvas: {
   clear: () => void;
@@ -40,63 +40,63 @@ let saveableCanvas: {
   undo: () => void;
 };
 
-const people = ["Input", "Output"];
+const people = ['Input', 'Output'];
 
 const sidebarNavigation = [
-  { name: "Open", href: "#", icon: InboxIcon, current: true },
+  { name: 'Open', href: '#', icon: InboxIcon, current: true },
   {
-    name: "Your Profile",
-    href: "/dashboard",
+    name: 'Your Profile',
+    href: '/dashboard',
     icon: UserCircleIcon,
     current: false,
   },
 ];
 
 function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
+  return classes.filter(Boolean).join(' ');
 }
 
 const getNodeId = () => `randomnode_${+new Date()}`;
 
 const Chart = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [input, setInput] = useState("initialState");
-  const [selected, setSelected] = useState("Input");
-  const [title, setTitle] = useState("");
-  const [color, setColor] = useState("#aabbcc");
+  const [input, setInput] = useState('initialState');
+  const [selected, setSelected] = useState('Input');
+  const [title, setTitle] = useState('');
+  const [color, setColor] = useState('#aabbcc');
   const router = useRouter();
   const [elements, setElements] = useState([
     {
-      id: "1",
-      type: "input", // input node
-      data: { label: "Input Node" },
+      id: '1',
+      type: 'input', // input node
+      data: { label: 'Input Node' },
       position: { x: 250, y: 25 },
       style: {
-        border: "1px solid #777",
+        border: '1px solid #777',
         padding: 10,
-        backgroundColor: "#f2a2c2",
+        backgroundColor: '#f2a2c2',
       },
     },
     // default node
     {
-      id: "2",
+      id: '2',
       // you can also pass a React component as a label
-      data: { label: "default node" },
+      data: { label: 'default node' },
       position: { x: 100, y: 125 },
     },
     {
-      id: "3",
-      type: "output", // output node
-      data: { label: "Output Node" },
+      id: '3',
+      type: 'output', // output node
+      data: { label: 'Output Node' },
       position: { x: 250, y: 250 },
     },
     // animated edge
-    { id: "e1-2", source: "1", target: "2", animated: true },
-    { id: "e2-3", source: "2", target: "3", animated: true },
+    { id: 'e1-2', source: '1', target: '2', animated: true },
+    { id: 'e2-3', source: '2', target: '3', animated: true },
   ]);
   const [userData, setuserData] = useState();
   const [socketUrl, setSocketUrl] = useState(
-    "ws://localhost:3003/ws/chat/" + router.query.id + "/"
+    'ws://localhost:3003/ws/chat/' + router.query.id + '/'
   );
   const {
     sendMessage,
@@ -106,15 +106,16 @@ const Chart = () => {
     readyState,
   } = useWebSocket(socketUrl);
   const connectionStatus = {
-    [ReadyState.CONNECTING]: "Connecting",
-    [ReadyState.OPEN]: "Open",
-    [ReadyState.CLOSING]: "Closing",
-    [ReadyState.CLOSED]: "Closed",
-    [ReadyState.UNINSTANTIATED]: "Uninstantiated",
+    [ReadyState.CONNECTING]: 'Connecting',
+    [ReadyState.OPEN]: 'Open',
+    [ReadyState.CLOSING]: 'Closing',
+    [ReadyState.CLOSED]: 'Closed',
+    [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
   }[readyState];
 
   const logout = () => {
-    dispatch(logoutUser());
+    // dispatch(logoutUser());
+    console.log('logout');
   };
   const changeTitle = (e) => {
     setTitle(e.target.value);
@@ -138,14 +139,14 @@ const Chart = () => {
     );
     let a = [];
     a.push(n);
-    a.push({ typeofoperation: "move" });
+    a.push({ typeofoperation: 'move' });
     sendJsonMessage(a);
   };
 
   // Removing node/edge
   const onElementsRemove = (elementsToRemove) => {
     setElements((els) => removeElements(elementsToRemove, els));
-    elementsToRemove.push({ typeofoperation: "remove" });
+    elementsToRemove.push({ typeofoperation: 'remove' });
     sendJsonMessage(elementsToRemove);
   };
 
@@ -157,7 +158,7 @@ const Chart = () => {
   const addNode = useCallback(() => {
     const newNode = {
       id: getNodeId(),
-      data: { label: "Added node" },
+      data: { label: 'Added node' },
       position: {
         x: Math.random() * window.innerWidth - 100,
         y: Math.random() * window.innerHeight,
@@ -166,7 +167,7 @@ const Chart = () => {
     setElements((els) => els.concat(newNode));
     let a = [];
     a.push(newNode);
-    a.push({ typeofoperation: "add" });
+    a.push({ typeofoperation: 'add' });
     sendJsonMessage(a);
   }, [setElements]);
   // Adding edge
@@ -174,7 +175,7 @@ const Chart = () => {
     setElements((els) => addEdge(params, els));
     let a = [];
     a.push(params);
-    a.push({ typeofoperation: "addEdge" });
+    a.push({ typeofoperation: 'addEdge' });
     sendJsonMessage(a);
   };
 
@@ -182,11 +183,11 @@ const Chart = () => {
   useEffect(() => {
     // avoiding issues on startup
     if (lastJsonMessage != null) {
-      let typeofoperation = lastJsonMessage["message"].pop()["typeofoperation"];
-      if (typeofoperation == "remove") {
-        setElements((els) => removeElements(lastJsonMessage["message"], els));
-      } else if (typeofoperation == "move") {
-        let n = lastJsonMessage["message"][0];
+      let typeofoperation = lastJsonMessage['message'].pop()['typeofoperation'];
+      if (typeofoperation == 'remove') {
+        setElements((els) => removeElements(lastJsonMessage['message'], els));
+      } else if (typeofoperation == 'move') {
+        let n = lastJsonMessage['message'][0];
         setElements((els) =>
           els.map((el) => {
             if (el.id === n.id) {
@@ -198,12 +199,12 @@ const Chart = () => {
             return el;
           })
         );
-      } else if (typeofoperation == "add") {
-        let newNode = lastJsonMessage["message"][0];
+      } else if (typeofoperation == 'add') {
+        let newNode = lastJsonMessage['message'][0];
         console.log(newNode);
         setElements((els) => els.concat(newNode));
-      } else if (typeofoperation == "addEdge") {
-        let newEdge = lastJsonMessage["message"][0];
+      } else if (typeofoperation == 'addEdge') {
+        let newEdge = lastJsonMessage['message'][0];
         setElements((els) => addEdge(newEdge, els));
       }
     }
@@ -335,9 +336,9 @@ const Chart = () => {
                 href={item.href}
                 className={classNames(
                   item.current
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-400 hover:bg-gray-700",
-                  "flex-shrink-0 inline-flex items-center justify-center h-14 w-14 rounded-lg"
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-400 hover:bg-gray-700',
+                  'flex-shrink-0 inline-flex items-center justify-center h-14 w-14 rounded-lg'
                 )}
               >
                 <span className="sr-only">{item.name}</span>
@@ -389,7 +390,7 @@ const Chart = () => {
               </span>
               <span className="ml-3">
                 <button
-                  onClick={() => console.log("undo")}
+                  onClick={() => console.log('undo')}
                   type="button"
                   className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
@@ -403,7 +404,7 @@ const Chart = () => {
 
               <span className="ml-3">
                 <button
-                  onClick={() => console.log("clear")}
+                  onClick={() => console.log('clear')}
                   type="button"
                   className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
@@ -428,16 +429,16 @@ const Chart = () => {
                 <MiniMap
                   nodeStrokeColor={(n) => {
                     if (n.style?.background) return n.style.background;
-                    if (n.type === "input") return "#0041d0";
-                    if (n.type === "output") return "#ff0072";
-                    if (n.type === "default") return "#1a192b";
+                    if (n.type === 'input') return '#0041d0';
+                    if (n.type === 'output') return '#ff0072';
+                    if (n.type === 'default') return '#1a192b';
 
-                    return "#eee";
+                    return '#eee';
                   }}
                   nodeColor={(n) => {
                     if (n.style?.background) return n.style.background;
 
-                    return "#fff";
+                    return '#fff';
                   }}
                   nodeBorderRadius={2}
                 />
