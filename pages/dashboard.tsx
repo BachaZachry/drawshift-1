@@ -55,7 +55,7 @@ const Dasboard = () => {
 
   const user = useGlobalStore((state) => state.user);
   const retrieveDrawings = useGlobalStore((state) => state.retrieveDrawings);
-  const setAuthModalOpen = useGlobalStore((state) => state.setAuthModalOpen);
+  const [joinRoom, setJoinRoom] = useState(false);
 
   const { setUserQuery, signOutMutation } = useAuth();
 
@@ -75,8 +75,8 @@ const Dasboard = () => {
     }
   }, [user]);
 
-  const openLoginForm = () => {
-    setAuthModalOpen(true);
+  const openJoinRoom = () => {
+    setJoinRoom(true);
   };
 
   if (isLoading || !user) {
@@ -260,7 +260,7 @@ const Dasboard = () => {
                   onClick={() =>
                     router.push({
                       pathname: '/drawing',
-                      query: { id: getRoomId() },
+                      query: { room: getRoomId() },
                     })
                   }
                   type="button"
@@ -272,7 +272,7 @@ const Dasboard = () => {
                   onClick={() =>
                     router.push({
                       pathname: '/chart',
-                      query: { id: getRoomId() },
+                      query: { room: getRoomId() },
                     })
                   }
                   type="button"
@@ -280,10 +280,10 @@ const Dasboard = () => {
                 >
                   <h3>New Diagram</h3>
                 </button>
-                <RoomPopup />
+                <RoomPopup open={joinRoom} setOpen={setJoinRoom} />
 
                 <button
-                  onClick={openLoginForm}
+                  onClick={openJoinRoom}
                   type="button"
                   className="relative inline-flex items-center p-2 text-gray-400 transition duration-200 rounded-md shadow h-11 bg-secondary font-monst dark:text-gray-200 hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-500 focus:text-gray-100 focus:ring-indigo-500"
                 >
@@ -296,8 +296,8 @@ const Dasboard = () => {
                 <button
                   onClick={() =>
                     router.push({
-                      pathname: '/drawing',
-                      query: { id: getRoomId(), dr_id: drawing.id },
+                      pathname: `/drawing/${drawing.id}`,
+                      query: { room: getRoomId() },
                     })
                   }
                   key={drawing.id}

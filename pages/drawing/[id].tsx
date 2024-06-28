@@ -26,7 +26,7 @@ import React, {
 } from 'react';
 import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { Main } from '../components/styled/board.styled';
+import { Main } from '../../components/styled/board.styled';
 import { HexColorPicker } from 'react-colorful';
 // Drawing
 import { useRouter } from 'next/router';
@@ -34,6 +34,8 @@ import { useGlobalStore } from 'lib/useGlobalStore';
 import useDrawing from 'lib/hooks/useDrawing';
 import useAuth from 'lib/hooks/useAuth';
 import Toast from 'components/Toast';
+import Spinner from 'components/Spinner';
+import { useQuery } from '@tanstack/react-query';
 
 const sidebarNavigation = [
   { name: 'Open', href: '#', icon: InboxIcon, current: true },
@@ -51,7 +53,7 @@ function classNames(...classes) {
 
 // Drawing
 
-const Drawing = () => {
+const SavedDrawing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [color, setColor] = useState('#aabbcc');
   const router = useRouter();
@@ -70,9 +72,29 @@ const Drawing = () => {
   const [isErasing, setIsErasing] = useState(false);
 
   const user = useGlobalStore((state) => state.user);
+  const retrieveSingleDrawing = useGlobalStore(
+    (state) => state.retrieveSingleDrawing
+  );
 
   const { signOutMutation } = useAuth();
   const { addDrawingMutation } = useDrawing();
+
+  const retrieveDrawingQuery = useQuery({
+    queryKey: ['drawing', router.query.id],
+    queryFn: () => retrieveSingleDrawing(router.query.id),
+    enabled: !!router.query.id,
+  });
+
+  const { data: drawing, isSuccess } = retrieveDrawingQuery;
+
+  useEffect(() => {
+    if (isSuccess) {
+      canvasDataRef.current = drawing.path;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      drawOnCanvas(ctx, canvasDataRef.current);
+    }
+  }, [isSuccess, canvasDataRef, drawing]);
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -83,8 +105,8 @@ const Drawing = () => {
   }[readyState];
 
   useEffect(() => {
-    if (router.isReady && router.query.id) {
-      setSocketUrl(`ws://localhost:8000/ws/chat/${router.query.id}/`);
+    if (router.isReady && router.query.room) {
+      setSocketUrl(`ws://localhost:8000/ws/chat/${router.query.room}/`);
     }
   }, [router.isReady, router.query.id]);
 
@@ -109,7 +131,6 @@ const Drawing = () => {
     e.preventDefault();
     if (canvasRef.current) {
       const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
 
       // Create a new canvas with the same dimensions
       const newCanvas = document.createElement('canvas');
@@ -600,4 +621,4 @@ const Drawing = () => {
   );
 };
 
-export default Drawing;
+export default SavedDrawing;

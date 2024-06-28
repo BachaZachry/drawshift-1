@@ -159,9 +159,9 @@ const createSlice: StateCreator<State & Actions> = (set, get) => ({
   },
   retrieveSingleDrawing: async (id) => {
     try {
-      const response = await api.post(`boards/drawing/${id}/`);
+      const response = await api.get(`boards/drawing/${id}/`);
 
-      return response.data.drawing;
+      return response.data;
     } catch (err) {
       console.error(err);
       throw new Error(err);
