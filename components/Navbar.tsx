@@ -3,7 +3,6 @@ import { LoginIcon } from '@heroicons/react/solid';
 import useAuth from 'lib/hooks/useAuth';
 import { useGlobalStore } from 'lib/useGlobalStore';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
