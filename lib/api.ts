@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import { useGlobalStore } from './useGlobalStore';
 
-let baseURL = 'http://localhost:8000/';
+let baseURL = process.env.NEXT_PUBLIC_BACKEND_HOST;
 
 export const api = axios.create({
   baseURL: baseURL,

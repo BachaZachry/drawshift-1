@@ -84,7 +84,9 @@ const Drawing = () => {
 
   useEffect(() => {
     if (router.isReady && router.query.room) {
-      setSocketUrl(`ws://localhost:8000/ws/chat/${router.query.room}/`);
+      setSocketUrl(
+        `${process.env.NEXT_PUBLIC_BACKEND_WS_HOST}${router.query.room}/`
+      );
     }
   }, [router.isReady, router.query.id]);
 
