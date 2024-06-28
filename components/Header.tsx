@@ -1,18 +1,16 @@
-import TextLoop from "react-text-loop";
+import TextLoop from 'react-text-loop';
 import {
-  CheckCircleIcon,
   NewspaperIcon,
-  MinusCircleIcon,
   TemplateIcon,
   ChartPieIcon,
-} from "@heroicons/react/solid";
+} from '@heroicons/react/solid';
 export default function Header({ name }) {
   return (
     <header>
       <div className="px-4 py-16 mx-auto max-w-7xl sm:py-16 lg:py-28 sm:px-6 lg:px-8">
         <div className="text-center">
           <p className="mt-1 text-4xl font-extrabold text-gray-100 font-monst sm:text-5xl sm:tracking-tight lg:text-6xl">
-            Make{" "}
+            Make{' '}
             <TextLoop
               springConfig={{ stiffness: 180, damping: 16 }}
               mask={true}
@@ -31,7 +29,7 @@ export default function Header({ name }) {
                 <ChartPieIcon className="w-14 h-14 mr-2" aria-hidden="true" />
                 <div className="">Graphs</div>
               </div>
-            </TextLoop>{" "}
+            </TextLoop>{' '}
             on the go
           </p>
           <p className="max-w-xl mx-auto mt-5 text-xl text-gray-500 font-quick">
