@@ -298,7 +298,12 @@ const SavedDrawing = () => {
 
   useEffect(() => {
     if (lastMessage !== null) {
-      const { type, canvas_data } = JSON.parse(lastMessage.data);
+      const { type, canvas_data, user_id } = JSON.parse(lastMessage.data);
+
+      if (user_id == user.id) {
+        return;
+      }
+
       if (type === 'canvas_update') {
         canvasDataRef.current = canvas_data;
         const canvas = canvasRef.current;
