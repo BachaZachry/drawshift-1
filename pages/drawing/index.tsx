@@ -34,6 +34,7 @@ import { useGlobalStore } from 'lib/useGlobalStore';
 import useDrawing from 'lib/hooks/useDrawing';
 import useAuth from 'lib/hooks/useAuth';
 import Toast from 'components/Toast';
+import { debounce } from 'lodash';
 
 const sidebarNavigation = [
   { name: 'Open', href: '#', icon: InboxIcon, current: true },
@@ -61,6 +62,7 @@ const Drawing = () => {
   const [title, setTitle] = useState('');
   const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {});
   const [showToast, setShowToast] = useState(false);
+  const [lastDrawnIndex, setLastDrawnIndex] = useState(-1);
 
   // Undo state
   const [history, setHistory] = useState([]);
@@ -88,7 +90,7 @@ const Drawing = () => {
         `${process.env.NEXT_PUBLIC_BACKEND_WS_HOST}${router.query.room}/`
       );
     }
-  }, [router.isReady, router.query.id]);
+  }, [router.isReady, router.query.room]);
 
   if (!user) {
     router.push('/');
@@ -154,7 +156,8 @@ const Drawing = () => {
       } else {
         canvasDataRef.current = history[newStep];
       }
-      drawOnCanvas(ctx, canvasDataRef.current);
+      const newLastDrawnIndex = drawOnCanvas(ctx, canvasDataRef.current, -1);
+      setLastDrawnIndex(newLastDrawnIndex);
       handleCanvasUpdate(canvasDataRef.current);
     }
   };
@@ -168,7 +171,8 @@ const Drawing = () => {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
 
-      drawOnCanvas(ctx, canvasDataRef.current);
+      const newLastDrawnIndex = drawOnCanvas(ctx, canvasDataRef.current, -1);
+      setLastDrawnIndex(newLastDrawnIndex);
       handleCanvasUpdate(canvasDataRef.current);
     }
   };
@@ -181,6 +185,7 @@ const Drawing = () => {
       canvasDataRef.current = [];
       setHistory([]);
       setCurrentStep(-1);
+      setLastDrawnIndex(-1);
       handleCanvasUpdate(canvasDataRef.current);
     }
   };
@@ -224,15 +229,44 @@ const Drawing = () => {
   };
 
   const handleCanvasUpdate = useCallback(
-    (data) => {
+    debounce((data) => {
       sendMessage(JSON.stringify({ type: 'canvas_update', canvas_data: data }));
-    },
+    }, 50),
     [sendMessage]
   );
 
-  const drawOnCanvas = useCallback((ctx, canvasData) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    canvasData.forEach((path) => {
+  const simplifyPath = (path, tolerance = 1) => {
+    if (path.length < 3) return path;
+
+    const simplified = [path[0]];
+    let prevPoint = path[0];
+
+    for (let i = 1; i < path.length - 1; i++) {
+      const point = path[i];
+      const nextPoint = path[i + 1];
+
+      const d1 = Math.hypot(point.x - prevPoint.x, point.y - prevPoint.y);
+      const d2 = Math.hypot(nextPoint.x - point.x, nextPoint.y - point.y);
+
+      if (d1 + d2 >= tolerance) {
+        simplified.push(point);
+        prevPoint = point;
+      }
+    }
+
+    simplified.push(path[path.length - 1]);
+    return simplified;
+  };
+
+  const drawOnCanvas = useCallback((ctx, canvasData, lastDrawnIndex = -1) => {
+    if (lastDrawnIndex === -1) {
+      // Clear the canvas if we're redrawing everything
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+
+    // Only draw new paths
+    for (let i = lastDrawnIndex + 1; i < canvasData.length; i++) {
+      const path = canvasData[i];
       ctx.beginPath();
       path.forEach((point, index) => {
         if (index === 0) {
@@ -250,7 +284,9 @@ const Drawing = () => {
         }
       });
       ctx.stroke();
-    });
+    }
+
+    return canvasData.length - 1; // Return the new lastDrawnIndex
   }, []);
 
   useEffect(() => {
@@ -276,7 +312,12 @@ const Drawing = () => {
 
   useEffect(() => {
     if (lastMessage !== null) {
-      const { type, canvas_data } = JSON.parse(lastMessage.data);
+      const { type, canvas_data, user_id } = JSON.parse(lastMessage.data);
+
+      if (user_id == user.id) {
+        return;
+      }
+
       if (type === 'canvas_update') {
         canvasDataRef.current = canvas_data;
         const canvas = canvasRef.current;
@@ -309,7 +350,16 @@ const Drawing = () => {
       const currentPath =
         canvasDataRef.current[canvasDataRef.current.length - 1];
       currentPath.push({ x, y, isEraser: isErasing });
-      drawOnCanvas(ctx, canvasDataRef.current);
+      if (currentPath.length > 10) {
+        canvasDataRef.current[canvasDataRef.current.length - 1] =
+          simplifyPath(currentPath);
+      }
+      const newLastDrawnIndex = drawOnCanvas(
+        ctx,
+        canvasDataRef.current,
+        lastDrawnIndex
+      );
+      setLastDrawnIndex(newLastDrawnIndex);
       handleCanvasUpdate(canvasDataRef.current);
     };
     canvas.addEventListener('mousedown', handleCanvasMouseDown);
@@ -553,7 +603,9 @@ const Drawing = () => {
               </span>
               <span className="ml-3">
                 <button
-                  onClick={() => navigator.clipboard.writeText(roomId)}
+                  onClick={() =>
+                    navigator.clipboard.writeText(router.query.room)
+                  }
                   type="button"
                   className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >

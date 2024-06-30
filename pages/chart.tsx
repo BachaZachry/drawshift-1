@@ -1,12 +1,8 @@
 // @ts-nocheck
-import { Dialog, Transition, Listbox } from '@headlessui/react';
+import { Dialog, Transition } from '@headlessui/react';
 import {
-  ArchiveIcon,
-  BanIcon,
-  FlagIcon,
   InboxIcon,
   MenuIcon,
-  PencilAltIcon,
   UserCircleIcon,
   XIcon,
 } from '@heroicons/react/outline';
@@ -15,8 +11,6 @@ import {
   SaveAsIcon,
   PlusCircleIcon,
   TrashIcon,
-  CheckIcon,
-  SelectorIcon,
 } from '@heroicons/react/solid';
 import Head from 'next/head';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
@@ -31,16 +25,9 @@ import ReactFlow, {
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { Main } from '../components/styled/board.styled';
 import { HexColorPicker } from 'react-colorful';
-// import { logoutUser } from "lib/userSlice";
 import { useRouter } from 'next/router';
-
-let saveableCanvas: {
-  clear: () => void;
-  getSaveData: () => string;
-  undo: () => void;
-};
-
-const people = ['Input', 'Output'];
+import { useGlobalStore } from 'lib/useGlobalStore';
+import useAuth from 'lib/hooks/useAuth';
 
 const sidebarNavigation = [
   { name: 'Open', href: '#', icon: InboxIcon, current: true },
@@ -60,11 +47,15 @@ const getNodeId = () => `randomnode_${+new Date()}`;
 
 const Chart = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [input, setInput] = useState('initialState');
-  const [selected, setSelected] = useState('Input');
   const [title, setTitle] = useState('');
   const [color, setColor] = useState('#aabbcc');
+  const [socketUrl, setSocketUrl] = useState(null);
   const router = useRouter();
+
+  const user = useGlobalStore((state) => state.user);
+
+  const { signOutMutation } = useAuth();
+
   const [elements, setElements] = useState([
     {
       id: '1',
@@ -94,17 +85,11 @@ const Chart = () => {
     { id: 'e1-2', source: '1', target: '2', animated: true },
     { id: 'e2-3', source: '2', target: '3', animated: true },
   ]);
-  const [userData, setuserData] = useState();
-  const [socketUrl, setSocketUrl] = useState(
-    'ws://localhost:3003/ws/chat/' + router.query.id + '/'
+  const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
+    socketUrl,
+    {}
   );
-  const {
-    sendMessage,
-    sendJsonMessage,
-    lastMessage,
-    lastJsonMessage,
-    readyState,
-  } = useWebSocket(socketUrl);
+
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
     [ReadyState.OPEN]: 'Open',
@@ -113,13 +98,35 @@ const Chart = () => {
     [ReadyState.UNINSTANTIATED]: 'Uninstantiated',
   }[readyState];
 
+  useEffect(() => {
+    if (router.isReady && router.query.room) {
+      setSocketUrl(
+        `${process.env.NEXT_PUBLIC_BACKEND_WS_HOST}${router.query.room}/`
+      );
+    }
+  }, [router.isReady, router.query.room]);
+
+  if (!user) {
+    router.push('/');
+  }
+
   const logout = () => {
-    // dispatch(logoutUser());
-    console.log('logout');
+    signOutMutation.mutate();
   };
+
   const changeTitle = (e) => {
     setTitle(e.target.value);
   };
+
+  const sendWebSocketMessage = (type, data) => {
+    sendJsonMessage({
+      type: 'diagram_update',
+      operation: type,
+      diagram_data: data,
+      user_id: user.id,
+    });
+  };
+
   const onSubmit = (e) => {
     e.preventDefault();
     // dispatch(postDrawing({ title, path }));
@@ -127,33 +134,22 @@ const Chart = () => {
 
   const onUpdateGraph = (e, n) => {
     setElements((els) =>
-      els.map((el) => {
-        if (el.id === n.id) {
-          el.position = {
-            x: n.position.x,
-            y: n.position.y,
-          };
-        }
-        return el;
-      })
+      els.map((el) => (el.id === n.id ? { ...el, position: n.position } : el))
     );
-    let a = [];
-    a.push(n);
-    a.push({ typeofoperation: 'move' });
-    sendJsonMessage(a);
+    sendWebSocketMessage('move', n);
   };
 
   // Removing node/edge
   const onElementsRemove = (elementsToRemove) => {
     setElements((els) => removeElements(elementsToRemove, els));
-    elementsToRemove.push({ typeofoperation: 'remove' });
-    sendJsonMessage(elementsToRemove);
+    sendWebSocketMessage('remove', elementsToRemove);
   };
 
   const onElementClick = (event, element) => {
     console.log(event);
     console.log(element);
   };
+
   // Adding a node
   const addNode = useCallback(() => {
     const newNode = {
@@ -165,50 +161,50 @@ const Chart = () => {
       },
     };
     setElements((els) => els.concat(newNode));
-    let a = [];
-    a.push(newNode);
-    a.push({ typeofoperation: 'add' });
-    sendJsonMessage(a);
+    sendWebSocketMessage('add', newNode);
   }, [setElements]);
+
   // Adding edge
   const onConnect = (params) => {
     setElements((els) => addEdge(params, els));
-    let a = [];
-    a.push(params);
-    a.push({ typeofoperation: 'addEdge' });
-    sendJsonMessage(a);
+    sendWebSocketMessage('addEdge', params);
   };
 
   // Handling different updates
   useEffect(() => {
-    // avoiding issues on startup
     if (lastJsonMessage != null) {
-      let typeofoperation = lastJsonMessage['message'].pop()['typeofoperation'];
-      if (typeofoperation == 'remove') {
-        setElements((els) => removeElements(lastJsonMessage['message'], els));
-      } else if (typeofoperation == 'move') {
-        let n = lastJsonMessage['message'][0];
-        setElements((els) =>
-          els.map((el) => {
-            if (el.id === n.id) {
-              el.position = {
-                x: n.position.x,
-                y: n.position.y,
-              };
-            }
-            return el;
-          })
-        );
-      } else if (typeofoperation == 'add') {
-        let newNode = lastJsonMessage['message'][0];
-        console.log(newNode);
-        setElements((els) => els.concat(newNode));
-      } else if (typeofoperation == 'addEdge') {
-        let newEdge = lastJsonMessage['message'][0];
-        setElements((els) => addEdge(newEdge, els));
+      const { operation, diagram_data, user_id } = lastJsonMessage;
+
+      if (user_id == user) {
+        return;
+      }
+      switch (operation) {
+        case 'remove':
+          setElements((els) => removeElements(diagram_data, els));
+          break;
+        case 'move':
+          setElements((els) =>
+            els.map((el) =>
+              el.id === diagram_data.id
+                ? { ...el, position: data.position }
+                : el
+            )
+          );
+          break;
+        case 'add':
+          setElements((els) => els.concat(diagram_data));
+          break;
+        case 'addEdge':
+          setElements((els) => addEdge(diagram_data, els));
+          break;
       }
     }
   }, [lastJsonMessage]);
+
+  const clearDiagram = () => {
+    setElements([]);
+    sendWebSocketMessage('clear', null);
+  };
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">
@@ -404,7 +400,7 @@ const Chart = () => {
 
               <span className="ml-3">
                 <button
-                  onClick={() => console.log('clear')}
+                  onClick={clearDiagram}
                   type="button"
                   className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
@@ -425,6 +421,7 @@ const Chart = () => {
                 onNodeDragStop={onUpdateGraph}
                 onElementsRemove={onElementsRemove}
                 onElementClick={onElementClick}
+                onConnect={onConnect}
               >
                 <MiniMap
                   nodeStrokeColor={(n) => {

@@ -7,10 +7,6 @@ class MyDocument extends Document {
         <Head>
           <meta name="format-detection" content="telephone=no" />
           <meta name="msapplication-tap-highlight" content="no" />
-          <meta
-            http-equiv="Content-Security-Policy"
-            content="upgrade-insecure-requests"
-          />
         </Head>
         <body>
           <Main />
