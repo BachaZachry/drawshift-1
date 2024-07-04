@@ -54,19 +54,21 @@ const Dasboard = () => {
   const router = useRouter();
 
   const user = useGlobalStore((state) => state.user);
-  const retrieveDrawings = useGlobalStore((state) => state.retrieveDrawings);
+  const retrieveUserBoards = useGlobalStore(
+    (state) => state.retrieveUserBoards
+  );
   const [joinRoom, setJoinRoom] = useState(false);
 
   const { setUserQuery, signOutMutation } = useAuth();
 
-  const retrieveDrawingsQuery = useQuery({
-    queryKey: ['drawings'],
-    queryFn: () => retrieveDrawings(),
+  const retrieveBoardsQuery = useQuery({
+    queryKey: ['boards'],
+    queryFn: () => retrieveUserBoards(),
     enabled: !!user,
   });
 
-  const { data: drawings } = retrieveDrawingsQuery;
-  console.log(drawings);
+  const { data } = retrieveBoardsQuery;
+
   const { isLoading } = setUserQuery;
 
   useEffect(() => {
@@ -271,7 +273,7 @@ const Dasboard = () => {
                 <button
                   onClick={() =>
                     router.push({
-                      pathname: '/chart',
+                      pathname: '/diagram',
                       query: { room: getRoomId() },
                     })
                   }
@@ -292,7 +294,7 @@ const Dasboard = () => {
               </SearchbarContainer>
             </Searchbar>
             <div className="flex flex-row flex-wrap max-w-6xl  px-4 pt-8 mx-auto sm:px-6 lg:px-0">
-              {drawings?.map((drawing) => (
+              {data?.drawings?.map((drawing) => (
                 <button
                   onClick={() =>
                     router.push({
@@ -305,6 +307,23 @@ const Dasboard = () => {
                   <img
                     src={`data:image/png;base64,${drawing.base64_image}`}
                     alt={drawing.title}
+                    className="object-cover w-80 h-48 rounded mx-2 my-2"
+                  />
+                </button>
+              ))}
+              {data?.diagrams?.map((diagram) => (
+                <button
+                  onClick={() =>
+                    router.push({
+                      pathname: `/diagram/${diagram.id}`,
+                      query: { room: getRoomId() },
+                    })
+                  }
+                  key={diagram.id}
+                >
+                  <img
+                    src={`data:image/png;base64,${diagram.base64_image}`}
+                    alt={diagram.title}
                     className="object-cover w-80 h-48 rounded mx-2 my-2"
                   />
                 </button>

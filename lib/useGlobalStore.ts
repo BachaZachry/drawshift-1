@@ -46,6 +46,15 @@ interface Actions {
   ) => Promise<{ data: any }>;
   retrieveDrawings: () => Promise<{ data: any }>;
   retrieveSingleDrawing: (id: string) => Promise<{ data: any }>;
+  addDiagram: (
+    title: string,
+    nodes: Array<object>,
+    edges: Array<object>,
+    base64_image: string
+  ) => Promise<{ data: any }>;
+  retrieveDiagrams: () => Promise<{ data: any }>;
+  retrieveSingleDiagram: (id: string) => Promise<{ data: any }>;
+  retrieveUserBoards: () => Promise<{ data: any }>;
 }
 
 const createSlice: StateCreator<State & Actions> = (set, get) => ({
@@ -160,6 +169,51 @@ const createSlice: StateCreator<State & Actions> = (set, get) => ({
   retrieveSingleDrawing: async (id) => {
     try {
       const response = await api.get(`boards/drawing/${id}/`);
+
+      return response.data;
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  },
+  addDiagram: async (title, nodes, edges, base64_image) => {
+    try {
+      const response = await api.post('boards/diagram/', {
+        title,
+        nodes,
+        edges,
+        base64_image,
+      });
+
+      return response.data;
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  },
+  retrieveDiagrams: async () => {
+    try {
+      const response = await api.get('boards/diagram/');
+
+      return response.data;
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  },
+  retrieveSingleDiagram: async (id) => {
+    try {
+      const response = await api.get(`boards/diagram/${id}/`);
+
+      return response.data;
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  },
+  retrieveUserBoards: async () => {
+    try {
+      const response = await api.get('boards/');
 
       return response.data;
     } catch (err) {

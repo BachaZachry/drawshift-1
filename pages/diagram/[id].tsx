@@ -11,23 +11,30 @@ import {
   SaveAsIcon,
   PlusCircleIcon,
   TrashIcon,
+  DuplicateIcon,
 } from '@heroicons/react/solid';
 import Head from 'next/head';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
 import ReactFlow, {
-  removeElements,
   addEdge,
   MiniMap,
   Controls,
   Background,
-} from 'react-flow-renderer';
+  useNodesState,
+  useEdgesState,
+} from 'reactflow';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { Main } from '../components/styled/board.styled';
+import { Main } from '../../components/styled/board.styled';
 import { HexColorPicker } from 'react-colorful';
 import { useRouter } from 'next/router';
 import { useGlobalStore } from 'lib/useGlobalStore';
 import useAuth from 'lib/hooks/useAuth';
+import useDiagram from 'lib/hooks/useDiagram';
+import 'reactflow/dist/style.css';
+import { toPng } from 'html-to-image';
+import Toast from 'components/Toast';
+import { useQuery } from '@tanstack/react-query';
 
 const sidebarNavigation = [
   { name: 'Open', href: '#', icon: InboxIcon, current: true },
@@ -45,50 +52,44 @@ function classNames(...classes) {
 
 const getNodeId = () => `randomnode_${+new Date()}`;
 
-const Chart = () => {
+const SavedDiagram = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [color, setColor] = useState('#aabbcc');
   const [socketUrl, setSocketUrl] = useState(null);
   const router = useRouter();
+  const [showToast, setShowToast] = useState(false);
 
   const user = useGlobalStore((state) => state.user);
+  const retrieveSingleDiagram = useGlobalStore(
+    (state) => state.retrieveSingleDiagram
+  );
 
   const { signOutMutation } = useAuth();
 
-  const [elements, setElements] = useState([
-    {
-      id: '1',
-      type: 'input', // input node
-      data: { label: 'Input Node' },
-      position: { x: 250, y: 25 },
-      style: {
-        border: '1px solid #777',
-        padding: 10,
-        backgroundColor: '#f2a2c2',
-      },
-    },
-    // default node
-    {
-      id: '2',
-      // you can also pass a React component as a label
-      data: { label: 'default node' },
-      position: { x: 100, y: 125 },
-    },
-    {
-      id: '3',
-      type: 'output', // output node
-      data: { label: 'Output Node' },
-      position: { x: 250, y: 250 },
-    },
-    // animated edge
-    { id: 'e1-2', source: '1', target: '2', animated: true },
-    { id: 'e2-3', source: '2', target: '3', animated: true },
-  ]);
+  const { addDiagramMutation } = useDiagram();
+
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
     socketUrl,
     {}
   );
+
+  const retrieveDiagramQuery = useQuery({
+    queryKey: ['diagram', router.query.id],
+    queryFn: () => retrieveSingleDiagram(router.query.id),
+    enabled: !!router.query.id,
+  });
+
+  const { data: diagram, isSuccess } = retrieveDiagramQuery;
+
+  useEffect(() => {
+    if (isSuccess) {
+      setNodes(diagram.nodes);
+      setEdges(diagram.edges);
+    }
+  }, [isSuccess]);
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -127,48 +128,80 @@ const Chart = () => {
     });
   };
 
+  useEffect(() => {
+    if (addDiagramMutation.isSuccess) {
+      setShowToast(true);
+      setTitle('');
+      clearDiagram();
+    }
+  }, [addDiagramMutation.isSuccess]);
+
   const onSubmit = (e) => {
     e.preventDefault();
-    // dispatch(postDrawing({ title, path }));
+
+    const diagram = document.querySelector('.react-flow');
+    toPng(diagram, { backgroundColor: '#fff' }).then((dataUrl) => {
+      addDiagramMutation.mutate({
+        title,
+        nodes,
+        edges,
+        base64_image: dataUrl.split(',')[1],
+      });
+    });
   };
 
-  const onUpdateGraph = (e, n) => {
-    setElements((els) =>
-      els.map((el) => (el.id === n.id ? { ...el, position: n.position } : el))
-    );
-    sendWebSocketMessage('move', n);
-  };
+  const onUpdateGraph = useCallback(
+    (event, node) => {
+      const updatedNode = { id: node.id, position: node.position };
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === node.id ? { ...n, position: node.position } : n
+        )
+      );
+      sendWebSocketMessage('move', updatedNode);
+    },
+    [setNodes, sendWebSocketMessage]
+  );
 
   // Removing node/edge
-  const onElementsRemove = (elementsToRemove) => {
-    setElements((els) => removeElements(elementsToRemove, els));
-    sendWebSocketMessage('remove', elementsToRemove);
-  };
-
-  const onElementClick = (event, element) => {
-    console.log(event);
-    console.log(element);
-  };
+  const onNodesDelete = useCallback(
+    (deleted) => {
+      setNodes((nds) =>
+        nds.filter((n) => !deleted.some((del) => del.id === n.id))
+      );
+      setEdges((eds) =>
+        eds.filter(
+          (e) =>
+            !deleted.some((del) => del.id === e.source || del.id === e.target)
+        )
+      );
+      sendWebSocketMessage('remove', deleted);
+    },
+    [setNodes, setEdges, sendWebSocketMessage]
+  );
 
   // Adding a node
   const addNode = useCallback(() => {
     const newNode = {
       id: getNodeId(),
-      data: { label: 'Added node' },
+      data: { label: 'new node' },
       position: {
         x: Math.random() * window.innerWidth - 100,
         y: Math.random() * window.innerHeight,
       },
     };
-    setElements((els) => els.concat(newNode));
+    setNodes((nds) => [...nds, newNode]);
     sendWebSocketMessage('add', newNode);
-  }, [setElements]);
+  }, [setNodes, sendWebSocketMessage]);
 
   // Adding edge
-  const onConnect = (params) => {
-    setElements((els) => addEdge(params, els));
-    sendWebSocketMessage('addEdge', params);
-  };
+  const onConnect = useCallback(
+    (params) => {
+      setEdges((eds) => addEdge(params, eds));
+      sendWebSocketMessage('addEdge', params);
+    },
+    [setEdges, sendWebSocketMessage]
+  );
 
   // Handling different updates
   useEffect(() => {
@@ -180,31 +213,76 @@ const Chart = () => {
       }
       switch (operation) {
         case 'remove':
-          setElements((els) => removeElements(diagram_data, els));
+          setNodes((nds) =>
+            nds.filter((n) => !diagram_data.some((del) => del.id === n.id))
+          );
+          setEdges((eds) =>
+            eds.filter(
+              (e) =>
+                !diagram_data.some(
+                  (del) => del.source === e.source && del.target === e.target
+                )
+            )
+          );
           break;
         case 'move':
-          setElements((els) =>
-            els.map((el) =>
-              el.id === diagram_data.id
-                ? { ...el, position: data.position }
-                : el
+          setNodes((nds) =>
+            nds.map((n) =>
+              n.id === diagram_data.id
+                ? { ...n, position: diagram_data.position }
+                : n
             )
           );
           break;
         case 'add':
-          setElements((els) => els.concat(diagram_data));
+          setNodes((nds) => [...nds, diagram_data]);
           break;
         case 'addEdge':
-          setElements((els) => addEdge(diagram_data, els));
+          setEdges((eds) => addEdge(diagram_data, eds));
+          break;
+        case 'clear':
+          setNodes([]);
+          setEdges([]);
           break;
       }
     }
   }, [lastJsonMessage]);
 
-  const clearDiagram = () => {
-    setElements([]);
+  const clearDiagram = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
     sendWebSocketMessage('clear', null);
-  };
+  }, [setNodes, setEdges, sendWebSocketMessage]);
+
+  const exportImage = useCallback(() => {
+    const diagram = document.querySelector('.react-flow');
+    const controls = document.querySelector('.react-flow__controls');
+    const minimap = document.querySelector('.react-flow__minimap');
+    if (diagram) {
+      const controlsDisplay = controls.style.display;
+      const minimapDisplay = minimap.style.display;
+
+      controls.style.display = 'none';
+      minimap.style.display = 'none';
+
+      toPng(diagram, { backgroundColor: '#fff' })
+        .then((dataUrl) => {
+          let a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = 'Image.png';
+          a.click();
+          a.remove();
+
+          controls.style.display = controlsDisplay;
+          minimap.style.display = minimapDisplay;
+        })
+        .catch((err) => {
+          console.error('Failed to export diagram as image', err);
+          controls.style.display = controlsDisplay;
+          minimap.style.display = minimapDisplay;
+        });
+    }
+  }, [title]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">
@@ -411,47 +489,62 @@ const Chart = () => {
                   Clear
                 </button>
               </span>
+              <span className="ml-3">
+                <button
+                  onClick={() =>
+                    navigator.clipboard.writeText(router.query.room)
+                  }
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <DuplicateIcon
+                    className="w-5 h-5 mr-2 -ml-1 text-gray-500"
+                    aria-hidden="true"
+                  />
+                  Copy Room Id
+                </button>
+              </span>
+              <span className="ml-3">
+                <button
+                  onClick={exportImage}
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  Export
+                </button>
+              </span>
               {/* Dropdown */}
             </div>
           </div>
           <div className="flex flex-row h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl">
             <div className="w-full h-[600px]">
               <ReactFlow
-                elements={elements}
-                onNodeDragStop={onUpdateGraph}
-                onElementsRemove={onElementsRemove}
-                onElementClick={onElementClick}
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
+                onNodeDragStop={onUpdateGraph}
+                onNodesDelete={onNodesDelete}
               >
-                <MiniMap
-                  nodeStrokeColor={(n) => {
-                    if (n.style?.background) return n.style.background;
-                    if (n.type === 'input') return '#0041d0';
-                    if (n.type === 'output') return '#ff0072';
-                    if (n.type === 'default') return '#1a192b';
-
-                    return '#eee';
-                  }}
-                  nodeColor={(n) => {
-                    if (n.style?.background) return n.style.background;
-
-                    return '#fff';
-                  }}
-                  nodeBorderRadius={2}
-                />
                 <Controls />
                 <Background color="#aaa" gap={16} />
+                <MiniMap nodeStrokeWidth={3} zoomable pannable />
               </ReactFlow>
             </div>
           </div>
-          {/* <span>The WebSocket is currently {connectionStatus}</span> */}
           <div className="flex flex-col items-center pt-12">
             <HexColorPicker color={color} onChange={setColor} />
           </div>
         </Main>
+        <Toast
+          show={showToast}
+          setShow={setShowToast}
+          message="Added diagram successfully!"
+        />
       </div>
     </div>
   );
 };
 
-export default Chart;
+export default SavedDiagram;
