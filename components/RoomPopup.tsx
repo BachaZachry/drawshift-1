@@ -14,7 +14,7 @@ export const RoomPopup = ({ open, setOpen }) => {
   };
   const openChartingRoom = (e) => {
     e.preventDefault();
-    router.push({ pathname: '/chart', query: { room: room } });
+    router.push({ pathname: '/diagram', query: { room: room } });
   };
   const changeRoom = (e) => {
     setRoom(e.target.value);
@@ -74,7 +74,7 @@ export const RoomPopup = ({ open, setOpen }) => {
                   onClick={openChartingRoom}
                   className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  Charting Room
+                  Diagram Room
                 </button>
               </span>
             </div>

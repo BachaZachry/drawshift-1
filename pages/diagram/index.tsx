@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { Dialog, Transition, Listbox } from '@headlessui/react';
+import { Dialog, Transition } from '@headlessui/react';
 import {
   InboxIcon,
   MenuIcon,
@@ -9,33 +9,31 @@ import {
 import {
   ReplyIcon,
   SaveAsIcon,
+  PlusCircleIcon,
   TrashIcon,
-  PencilIcon,
-  FastForwardIcon,
-  XCircleIcon,
-  DownloadIcon,
   DuplicateIcon,
 } from '@heroicons/react/solid';
 import Head from 'next/head';
-import React, {
-  Fragment,
-  useCallback,
-  useEffect,
-  useState,
-  useRef,
-} from 'react';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import 'react-bootstrap-range-slider/dist/react-bootstrap-range-slider.css';
+import ReactFlow, {
+  addEdge,
+  MiniMap,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+} from 'reactflow';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { Main } from '../../components/styled/board.styled';
 import { HexColorPicker } from 'react-colorful';
-// Drawing
 import { useRouter } from 'next/router';
 import { useGlobalStore } from 'lib/useGlobalStore';
-import useDrawing from 'lib/hooks/useDrawing';
 import useAuth from 'lib/hooks/useAuth';
+import useDiagram from 'lib/hooks/useDiagram';
+import 'reactflow/dist/style.css';
+import { toPng } from 'html-to-image';
 import Toast from 'components/Toast';
-import Spinner from 'components/Spinner';
-import { useQuery } from '@tanstack/react-query';
 
 const sidebarNavigation = [
   { name: 'Open', href: '#', icon: InboxIcon, current: true },
@@ -51,50 +49,28 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-// Drawing
+const getNodeId = () => `randomnode_${+new Date()}`;
 
-const SavedDrawing = () => {
+const Diagram = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [color, setColor] = useState('#aabbcc');
-  const router = useRouter();
-  const [socketUrl, setSocketUrl] = useState(null);
-  const canvasDataRef = useRef([]);
-  const canvasRef = useRef(null);
   const [title, setTitle] = useState('');
-  const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {});
+  const [color, setColor] = useState('#aabbcc');
+  const [socketUrl, setSocketUrl] = useState(null);
+  const router = useRouter();
   const [showToast, setShowToast] = useState(false);
 
-  // Undo state
-  const [history, setHistory] = useState([]);
-  const [currentStep, setCurrentStep] = useState(-1);
-
-  // Eraser
-  const [isErasing, setIsErasing] = useState(false);
-
   const user = useGlobalStore((state) => state.user);
-  const retrieveSingleDrawing = useGlobalStore(
-    (state) => state.retrieveSingleDrawing
-  );
 
   const { signOutMutation } = useAuth();
-  const { addDrawingMutation } = useDrawing();
 
-  const retrieveDrawingQuery = useQuery({
-    queryKey: ['drawing', router.query.id],
-    queryFn: () => retrieveSingleDrawing(router.query.id),
-    enabled: !!router.query.id,
-  });
+  const { addDiagramMutation } = useDiagram();
 
-  const { data: drawing, isSuccess } = retrieveDrawingQuery;
-
-  useEffect(() => {
-    if (isSuccess) {
-      canvasDataRef.current = drawing.path;
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      drawOnCanvas(ctx, canvasDataRef.current);
-    }
-  }, [isSuccess, canvasDataRef, drawing]);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(
+    socketUrl,
+    {}
+  );
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -110,242 +86,184 @@ const SavedDrawing = () => {
         `${process.env.NEXT_PUBLIC_BACKEND_WS_HOST}${router.query.room}/`
       );
     }
-  }, [router.isReady, router.query.id]);
+  }, [router.isReady, router.query.room]);
 
   if (!user) {
     router.push('/');
   }
 
+  const logout = () => {
+    signOutMutation.mutate();
+  };
+
   const changeTitle = (e) => {
     setTitle(e.target.value);
   };
 
+  const sendWebSocketMessage = (type, data) => {
+    sendJsonMessage({
+      type: 'diagram_update',
+      operation: type,
+      diagram_data: data,
+      user_id: user.id,
+    });
+  };
+
   useEffect(() => {
-    if (addDrawingMutation.isSuccess) {
+    if (addDiagramMutation.isSuccess) {
       setShowToast(true);
       setTitle('');
-      resetCanvasHandler();
+      clearDiagram();
     }
-  }, [addDrawingMutation.isSuccess]);
+  }, [addDiagramMutation.isSuccess]);
 
-  // Saving Drawing
   const onSubmit = (e) => {
     e.preventDefault();
-    if (canvasRef.current) {
-      const canvas = canvasRef.current;
 
-      // Create a new canvas with the same dimensions
-      const newCanvas = document.createElement('canvas');
-      newCanvas.width = canvas.width;
-      newCanvas.height = canvas.height;
-      const newCtx = newCanvas.getContext('2d');
-
-      // Fill the new canvas with a white background
-      newCtx.fillStyle = 'white';
-      newCtx.fillRect(0, 0, newCanvas.width, newCanvas.height);
-
-      // Draw the original canvas content onto the new canvas
-      newCtx.drawImage(canvas, 0, 0);
-
-      // Convert the new canvas to a data URL
-      const dataURL = newCanvas.toDataURL('image/png');
-
-      // Extract the base64 data
-      const base64Image = dataURL.split(',')[1];
-
-      addDrawingMutation.mutate({
+    const diagram = document.querySelector('.react-flow');
+    toPng(diagram, { backgroundColor: '#fff' }).then((dataUrl) => {
+      addDiagramMutation.mutate({
         title,
-        path: canvasDataRef.current,
-        base64_image: base64Image,
+        nodes,
+        edges,
+        base64_image: dataUrl.split(',')[1],
       });
-    }
+    });
   };
 
-  // Handlers
-  const undoHandler = () => {
-    if (currentStep >= 0) {
-      const newStep = currentStep - 1;
-      setCurrentStep(newStep);
-
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-
-      if (newStep === -1) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        canvasDataRef.current = [];
-      } else {
-        canvasDataRef.current = history[newStep];
-      }
-      drawOnCanvas(ctx, canvasDataRef.current);
-      handleCanvasUpdate(canvasDataRef.current);
-    }
-  };
-
-  const redoHandler = () => {
-    if (currentStep < history.length - 1) {
-      const nextStep = currentStep + 1;
-      setCurrentStep(nextStep);
-
-      canvasDataRef.current = history[currentStep + 1];
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-
-      drawOnCanvas(ctx, canvasDataRef.current);
-      handleCanvasUpdate(canvasDataRef.current);
-    }
-  };
-
-  const resetCanvasHandler = () => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      canvasDataRef.current = [];
-      setHistory([]);
-      setCurrentStep(-1);
-      handleCanvasUpdate(canvasDataRef.current);
-    }
-  };
-
-  const penHandler = () => {
-    setIsErasing(false);
-  };
-
-  const eraserHandler = () => {
-    setIsErasing(true);
-    console.log(isErasing);
-  };
-
-  const exportImage = () => {
-    if (canvasRef.current) {
-      const originalCanvas = canvasRef.current;
-
-      // Create a temporary canvas
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = originalCanvas.width;
-      tempCanvas.height = originalCanvas.height;
-      const tempCtx = tempCanvas.getContext('2d');
-
-      // Fill the temporary canvas with a white background
-      tempCtx.fillStyle = 'white';
-      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-      // Draw the original canvas content onto the temporary canvas
-      tempCtx.drawImage(originalCanvas, 0, 0);
-
-      // Get the image data URL from the temporary canvas
-      const imageDataURL = tempCanvas.toDataURL('image/png');
-
-      // Create a link and trigger the download
-      let a = document.createElement('a');
-      a.href = imageDataURL;
-      a.download = 'Image.png';
-      a.click();
-      a.remove();
-    }
-  };
-
-  const handleCanvasUpdate = useCallback(
-    (data) => {
-      sendMessage(JSON.stringify({ type: 'canvas_update', canvas_data: data }));
+  const onUpdateGraph = useCallback(
+    (event, node) => {
+      const updatedNode = { id: node.id, position: node.position };
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === node.id ? { ...n, position: node.position } : n
+        )
+      );
+      sendWebSocketMessage('move', updatedNode);
     },
-    [sendMessage]
+    [setNodes, sendWebSocketMessage]
   );
 
-  const drawOnCanvas = useCallback((ctx, canvasData) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    canvasData.forEach((path) => {
-      ctx.beginPath();
-      path.forEach((point, index) => {
-        if (index === 0) {
-          ctx.moveTo(point.x, point.y);
-        } else {
-          if (point.isEraser) {
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.lineWidth = 20;
-          } else {
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 2;
-          }
-          ctx.lineTo(point.x, point.y);
-        }
-      });
-      ctx.stroke();
-    });
-  }, []);
+  // Removing node/edge
+  const onNodesDelete = useCallback(
+    (deleted) => {
+      setNodes((nds) =>
+        nds.filter((n) => !deleted.some((del) => del.id === n.id))
+      );
+      setEdges((eds) =>
+        eds.filter(
+          (e) =>
+            !deleted.some((del) => del.id === e.source || del.id === e.target)
+        )
+      );
+      sendWebSocketMessage('remove', deleted);
+    },
+    [setNodes, setEdges, sendWebSocketMessage]
+  );
 
-  useEffect(() => {
-    const resizeCanvas = () => {
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const parent = canvas.parentElement;
-        canvas.width = parent.clientWidth;
-
-        // Redraw the canvas content if necessary
-        const ctx = canvas.getContext('2d');
-        drawOnCanvas(ctx, canvasDataRef.current);
-      }
+  // Adding a node
+  const addNode = useCallback(() => {
+    const newNode = {
+      id: getNodeId(),
+      data: { label: 'new node' },
+      position: {
+        x: Math.random() * window.innerWidth - 100,
+        y: Math.random() * window.innerHeight,
+      },
     };
+    setNodes((nds) => [...nds, newNode]);
+    sendWebSocketMessage('add', newNode);
+  }, [setNodes, sendWebSocketMessage]);
 
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+  // Adding edge
+  const onConnect = useCallback(
+    (params) => {
+      setEdges((eds) => addEdge(params, eds));
+      sendWebSocketMessage('addEdge', params);
+    },
+    [setEdges, sendWebSocketMessage]
+  );
 
-    return () => {
-      window.removeEventListener('resize', resizeCanvas);
-    };
-  }, [drawOnCanvas]);
-
+  // Handling different updates
   useEffect(() => {
-    if (lastMessage !== null) {
-      const { type, canvas_data, user_id } = JSON.parse(lastMessage.data);
+    if (lastJsonMessage != null) {
+      const { operation, diagram_data, user_id } = lastJsonMessage;
 
-      if (user_id == user.id) {
+      if (user_id == user) {
         return;
       }
-
-      if (type === 'canvas_update') {
-        canvasDataRef.current = canvas_data;
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        drawOnCanvas(ctx, canvas_data);
+      switch (operation) {
+        case 'remove':
+          setNodes((nds) =>
+            nds.filter((n) => !diagram_data.some((del) => del.id === n.id))
+          );
+          setEdges((eds) =>
+            eds.filter(
+              (e) =>
+                !diagram_data.some(
+                  (del) => del.source === e.source && del.target === e.target
+                )
+            )
+          );
+          break;
+        case 'move':
+          setNodes((nds) =>
+            nds.map((n) =>
+              n.id === diagram_data.id
+                ? { ...n, position: diagram_data.position }
+                : n
+            )
+          );
+          break;
+        case 'add':
+          setNodes((nds) => [...nds, diagram_data]);
+          break;
+        case 'addEdge':
+          setEdges((eds) => addEdge(diagram_data, eds));
+          break;
+        case 'clear':
+          setNodes([]);
+          setEdges([]);
+          break;
       }
     }
-  }, [lastMessage, drawOnCanvas]);
+  }, [lastJsonMessage]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const handleCanvasMouseDown = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      canvasDataRef.current.push([{ x, y, isEraser: isErasing }]);
-      setHistory((prevHistory) => [
-        ...prevHistory.slice(0, currentStep + 1),
-        [...canvasDataRef.current],
-      ]);
-      setCurrentStep((prevStep) => prevStep + 1);
-      handleCanvasUpdate(canvasDataRef.current);
-    };
-    const handleCanvasMouseMove = (e) => {
-      if (e.buttons !== 1) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const currentPath =
-        canvasDataRef.current[canvasDataRef.current.length - 1];
-      currentPath.push({ x, y, isEraser: isErasing });
-      drawOnCanvas(ctx, canvasDataRef.current);
-      handleCanvasUpdate(canvasDataRef.current);
-    };
-    canvas.addEventListener('mousedown', handleCanvasMouseDown);
-    canvas.addEventListener('mousemove', handleCanvasMouseMove);
-    return () => {
-      canvas.removeEventListener('mousedown', handleCanvasMouseDown);
-      canvas.removeEventListener('mousemove', handleCanvasMouseMove);
-    };
-  }, [handleCanvasUpdate, drawOnCanvas, currentStep]);
+  const clearDiagram = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
+    sendWebSocketMessage('clear', null);
+  }, [setNodes, setEdges, sendWebSocketMessage]);
+
+  const exportImage = useCallback(() => {
+    const diagram = document.querySelector('.react-flow');
+    const controls = document.querySelector('.react-flow__controls');
+    const minimap = document.querySelector('.react-flow__minimap');
+    if (diagram) {
+      const controlsDisplay = controls.style.display;
+      const minimapDisplay = minimap.style.display;
+
+      controls.style.display = 'none';
+      minimap.style.display = 'none';
+
+      toPng(diagram, { backgroundColor: '#fff' })
+        .then((dataUrl) => {
+          let a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = 'Image.png';
+          a.click();
+          a.remove();
+
+          controls.style.display = controlsDisplay;
+          minimap.style.display = minimapDisplay;
+        })
+        .catch((err) => {
+          console.error('Failed to export diagram as image', err);
+          controls.style.display = controlsDisplay;
+          minimap.style.display = minimapDisplay;
+        });
+    }
+  }, [title]);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-dark font-monst">
@@ -447,7 +365,7 @@ const SavedDrawing = () => {
                     </a>
                     <button
                       className="block px-3 py-2 text-base font-medium text-gray-900 rounded-md hover:bg-gray-50"
-                      onClick={() => signOutMutation.mutate()}
+                      onClick={logout}
                     >
                       Sign out
                     </button>
@@ -488,7 +406,7 @@ const SavedDrawing = () => {
         {/* Main area */}
         <Main>
           {/* Page header */}
-          <div className="flex flex-col items-center justify-between mx-auto mt-2 lg:flex-row max-w-7xl">
+          <div className="flex flex-col items-center justify-between mx-auto mt-2 md:flex-row max-w-7xl">
             <nav className="flex" aria-label="Breadcrumb"></nav>
             <form className="flex flex-grow" onSubmit={onSubmit}>
               <input
@@ -511,10 +429,23 @@ const SavedDrawing = () => {
                 </button>
               </span>
             </form>
-            <div className="flex flex-wrap justify-center mt-5 lg:mt-0 lg:ml-4">
+            <div className="flex flex-wrap justify-start mt-5 lg:mt-0 lg:ml-4">
               <span className="ml-3">
                 <button
-                  onClick={undoHandler}
+                  onClick={addNode}
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                  <PlusCircleIcon
+                    className="w-5 h-5 mr-2 -ml-1 text-gray-500"
+                    aria-hidden="true"
+                  />
+                  Add Node
+                </button>
+              </span>
+              <span className="ml-3">
+                <button
+                  onClick={() => console.log('undo')}
                   type="button"
                   className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
@@ -528,7 +459,7 @@ const SavedDrawing = () => {
 
               <span className="ml-3">
                 <button
-                  onClick={resetCanvasHandler}
+                  onClick={clearDiagram}
                   type="button"
                   className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
@@ -537,45 +468,6 @@ const SavedDrawing = () => {
                     aria-hidden="true"
                   />
                   Clear
-                </button>
-              </span>
-              <span className="ml-3">
-                <button
-                  onClick={redoHandler}
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <FastForwardIcon
-                    className="w-5 h-5 mr-2 -ml-1 text-gray-500"
-                    aria-hidden="true"
-                  />
-                  Redo
-                </button>
-              </span>
-              <span className="ml-3">
-                <button
-                  onClick={eraserHandler}
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <XCircleIcon
-                    className="w-5 h-5 mr-2 -ml-1 text-gray-500"
-                    aria-hidden="true"
-                  />
-                  Eraser
-                </button>
-              </span>
-              <span className="ml-3">
-                <button
-                  onClick={penHandler}
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  <PencilIcon
-                    className="w-5 h-5 mr-2 -ml-1 text-gray-500"
-                    aria-hidden="true"
-                  />
-                  Pen
                 </button>
               </span>
               <span className="ml-3">
@@ -597,37 +489,43 @@ const SavedDrawing = () => {
                 <button
                   onClick={exportImage}
                   type="button"
-                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-4 py-2 my-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  <DownloadIcon
-                    className="w-5 h-5 mr-2 -ml-1"
-                    aria-hidden="true"
-                  />
-                  Download Image
+                  Export
                 </button>
               </span>
+              {/* Dropdown */}
             </div>
           </div>
-          <div className="h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl relative">
-            <canvas
-              ref={canvasRef}
-              height={450}
-              width="100%"
-              className="rounded-xl"
-            />
+          <div className="flex flex-row h-auto mx-auto mt-8 bg-white rounded-lg shadow-lg max-w-7xl">
+            <div className="w-full h-[600px]">
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onNodeDragStop={onUpdateGraph}
+                onNodesDelete={onNodesDelete}
+              >
+                <Controls />
+                <Background color="#aaa" gap={16} />
+                <MiniMap nodeStrokeWidth={3} zoomable pannable />
+              </ReactFlow>
+            </div>
           </div>
-          <div className="flex flex-wrap justify-center mt-5 lg:mt-0 lg:ml-4">
+          <div className="flex flex-col items-center pt-12">
             <HexColorPicker color={color} onChange={setColor} />
           </div>
         </Main>
         <Toast
           show={showToast}
           setShow={setShowToast}
-          message="Added drawing successfully!"
+          message="Added diagram successfully!"
         />
       </div>
     </div>
   );
 };
 
-export default SavedDrawing;
+export default Diagram;
